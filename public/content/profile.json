@@ -1,0 +1,23 @@
+{
+  "name": "The Rijal Club",
+  "handle": "@therijalclub",
+  "tagline": "• Knowledge • Deen • Imaan",
+  "description": "A local youth circle building character, bonding with one another and Islamic growth through classes, events, and active community work.",
+  "locationLabel": "London, United Kingdom",
+  "logo": "/rijal.png",
+  "heroImage": "/content/assets/images/hero-identity.png",
+  "values": ["Knowledge", "Deen", "Imaan"],
+  "stats": [
+    { "label": "Posts", "value": "15" },
+    { "label": "Followers", "value": "531" },
+    { "label": "Following", "value": "25" }
+  ],
+  "primaryCta": {
+    "label": "Join Main WhatsApp",
+    "url": "https://chat.whatsapp.com/ElJdWtSDkGU6weBUc1F0kY"
+  },
+  "secondaryCta": {
+    "label": "View Instagram",
+    "url": "https://www.instagram.com/therijalclub/"
+  }
+}

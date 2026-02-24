@@ -1,0 +1,15 @@
+{
+  "quran": {
+    "bootstrapHours": 168,
+    "chapterVersesDays": 30,
+    "pageVersesDays": 30,
+    "chapterAudioHours": 168
+  },
+  "hadith": {
+    "entryDays": 60
+  },
+  "prayer": {
+    "londonFeedMinutes": 10,
+    "aladhanMinutes": 10
+  }
+}

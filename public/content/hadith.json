@@ -1,0 +1,64 @@
+{
+  "title": "Hadith Library",
+  "description": "Read major Sunni hadith collections with an English-first reader and configurable display controls.",
+  "apiBaseUrl": "https://hadithapi.pages.dev/api",
+  "defaultCollectionId": "bukhari",
+  "defaultHadithId": 1,
+  "collections": [
+    {
+      "id": "bukhari",
+      "title": "Sahih al-Bukhari",
+      "subtitle": "Most authentic collection",
+      "description": "Hadith API collection with English text and reference metadata.",
+      "sourceSlug": "bukhari",
+      "totalHadith": 7563,
+      "coverImage": "/content/assets/images/hadith-covers/sahih-al-bukhari.jpg",
+      "referenceUrl": "https://hadithapi.pages.dev/collection/bukhari",
+      "pdfUrl": "/content/assets/pdfs/sahih-al-bukhari-vol-1.pdf"
+    },
+    {
+      "id": "muslim",
+      "title": "Sahih Muslim",
+      "subtitle": "Core Sunni source",
+      "description": "Canonical hadith collection by Imam Muslim.",
+      "sourceSlug": "muslim",
+      "totalHadith": 3032,
+      "coverImage": "/content/assets/images/hadith-covers/sahih-muslim.jpg",
+      "referenceUrl": "https://hadithapi.pages.dev/collection/muslim",
+      "pdfUrl": "/content/assets/pdfs/sahih-muslim-vol-1.pdf"
+    },
+    {
+      "id": "abudawud",
+      "title": "Sunan Abi Dawud",
+      "subtitle": "Fiqh-focused narrations",
+      "description": "Sunan collection with practical rulings and narrations.",
+      "sourceSlug": "abudawud",
+      "totalHadith": 3980,
+      "coverImage": "/content/assets/images/hadith-covers/sunan-abu-dawud.jpg",
+      "referenceUrl": "https://hadithapi.pages.dev/collection/abudawud",
+      "pdfUrl": "/content/assets/pdfs/sunan-abu-dawud-vol-1.pdf"
+    },
+    {
+      "id": "tirmidhi",
+      "title": "Jami at-Tirmidhi",
+      "subtitle": "Classification rich",
+      "description": "Collection with grading context and thematic chapters.",
+      "sourceSlug": "tirmidhi",
+      "totalHadith": 3955,
+      "coverImage": "/content/assets/images/hadith-covers/jami-at-tirmidhi.jpg",
+      "referenceUrl": "https://hadithapi.pages.dev/collection/tirmidhi",
+      "pdfUrl": "/content/assets/pdfs/jami-at-tirmidhi-vol-1.pdf"
+    },
+    {
+      "id": "ibnmajah",
+      "title": "Sunan Ibn Majah",
+      "subtitle": "Major Kutub al-Sittah text",
+      "description": "Core Sunni hadith source included in most hadith study tracks.",
+      "sourceSlug": "ibnmajah",
+      "totalHadith": 4340,
+      "coverImage": "/content/assets/images/hadith-covers/sunan-ibn-majah.jpg",
+      "referenceUrl": "https://hadithapi.pages.dev/collection/ibnmajah",
+      "pdfUrl": "/content/assets/pdfs/sunan-ibn-majah-vol-1.pdf"
+    }
+  ]
+}

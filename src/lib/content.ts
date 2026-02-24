@@ -1,0 +1,383 @@
+import { z } from 'zod'
+
+import type {
+  AnnouncementsConfig,
+  CacheConfig,
+  ContactConfig,
+  HadithConfig,
+  LinksConfig,
+  QuranConfig,
+  PrayerConfig,
+  ProfileConfig,
+  StoreConfig,
+} from '@/types/content'
+
+const rawContentBaseUrl = import.meta.env.VITE_CONTENT_BASE_URL
+const contentBaseUrl = (rawContentBaseUrl?.trim().replace(/^['"]|['"]$/g, '') || '/content').replace(/\/+$/, '')
+
+function contentFileUrl(fileName: string): string {
+  return `${contentBaseUrl}/${fileName.replace(/^\/+/, '')}`
+}
+
+const ctaSchema = z.object({
+  label: z.string().min(1),
+  url: z.string().url(),
+})
+
+const urlOrAbsolutePathSchema = z.string().refine(
+  (value) => {
+    if (value.startsWith('/')) {
+      return true
+    }
+
+    return z.string().url().safeParse(value).success
+  },
+  {
+    message: 'Expected a URL or an absolute path (starting with /)',
+  },
+)
+
+const profileSchema = z.object({
+  name: z.string().min(1),
+  handle: z.string().min(1),
+  tagline: z.string().min(1),
+  description: z.string().min(1),
+  locationLabel: z.string().min(1),
+  logo: z.string().min(1),
+  heroImage: z.string().min(1),
+  values: z.array(z.string().min(1)).min(1),
+  stats: z
+    .array(
+      z.object({
+        label: z.string().min(1),
+        value: z.string().min(1),
+      }),
+    )
+    .min(1),
+  primaryCta: ctaSchema,
+  secondaryCta: ctaSchema,
+})
+
+const linksSchema = z.object({
+  heading: z.string().min(1),
+  description: z.string().min(1),
+  quickLinks: z
+    .array(
+      z.object({
+        id: z.string().min(1),
+        title: z.string().min(1),
+        subtitle: z.string().min(1),
+        url: z.string().url(),
+        icon: z.string().min(1),
+        featured: z.boolean().optional(),
+      }),
+    )
+    .min(1),
+  socials: z
+    .array(
+      z.object({
+        platform: z.string().min(1),
+        url: z.string().url(),
+      }),
+    )
+    .min(1),
+  adhanAlert: z
+    .object({
+      enabled: z.boolean(),
+      title: z.string().min(1),
+      description: z.string().min(1),
+      audioUrl: urlOrAbsolutePathSchema,
+      autoPlayWindowSeconds: z.number().int().min(1).max(300),
+    })
+    .optional(),
+  resources: z
+    .array(
+      z.object({
+        id: z.string().min(1),
+        title: z.string().min(1),
+        subtitle: z.string().min(1),
+        url: z.string().url(),
+        sectionId: z.string().min(1),
+      }),
+    )
+    .optional(),
+  resourceSections: z
+    .array(
+      z.object({
+        id: z.string().min(1),
+        title: z.string().min(1),
+        icon: z.enum(['book-open', 'brain', 'handshake', 'hand-heart', 'message-circle', 'play-circle', 'link']),
+        description: z.string().min(1).optional(),
+      }),
+    )
+    .optional(),
+})
+
+const announcementsSchema = z.object({
+  heading: z.string().min(1),
+  description: z.string().min(1),
+  items: z
+    .array(
+      z.object({
+        id: z.string().min(1),
+        type: z.enum(['text', 'image', 'video']),
+        title: z.string().min(1),
+        body: z.string().min(1),
+        publishedAt: z.string().min(1),
+        mediaUrl: z.string().min(1).optional(),
+        posterUrl: z.string().min(1).optional(),
+        media: z
+          .array(
+            z.object({
+              type: z.enum(['image', 'video']),
+              url: urlOrAbsolutePathSchema,
+              posterUrl: urlOrAbsolutePathSchema.optional(),
+              alt: z.string().min(1).optional(),
+            }),
+          )
+          .optional(),
+        ctaLabel: z.string().min(1).optional(),
+        ctaUrl: z.string().url().optional(),
+      }),
+    )
+    .min(1),
+})
+
+const prayerLocationSchema = z.object({
+  id: z.string().min(1),
+  label: z.string().min(1),
+  city: z.string().min(1),
+  country: z.string().min(1),
+  timezone: z.string().min(1),
+  latitude: z.number(),
+  longitude: z.number(),
+  provider: z.enum(['iccuk_html', 'london_unified_7d', 'adhan']),
+  officialSourceLabel: z.string().min(1),
+  officialSourceUrl: z.string().url(),
+  proxyUrlTemplate: z.string().optional(),
+  adhanMethod: z
+    .enum([
+      'MuslimWorldLeague',
+      'Egyptian',
+      'Karachi',
+      'UmmAlQura',
+      'Dubai',
+      'MoonsightingCommittee',
+      'NorthAmerica',
+      'Kuwait',
+      'Qatar',
+      'Singapore',
+      'Tehran',
+      'Turkey',
+      'Other',
+    ])
+    .optional(),
+  adhanMadhab: z.enum(['shafi', 'hanafi']).optional(),
+  adhanHighLatitudeRule: z.enum(['recommended', 'middleofthenight', 'seventhofthenight', 'twilightangle']).optional(),
+  adjustments: z
+    .object({
+      Fajr: z.number().int().optional(),
+      Sunrise: z.number().int().optional(),
+      Dhuhr: z.number().int().optional(),
+      Asr: z.number().int().optional(),
+      Maghrib: z.number().int().optional(),
+      Isha: z.number().int().optional(),
+    })
+    .partial()
+    .optional(),
+})
+
+const prayerSchema = z.object({
+  widgetTitle: z.string().min(1),
+  refreshMinutes: z.number().int().positive(),
+  fallbackLocationId: z.string().min(1),
+  timezoneRoutes: z
+    .array(
+      z.object({
+        startsWith: z.string().min(1),
+        locationId: z.string().min(1),
+      }),
+    )
+    .min(1),
+  notes: z.array(z.string().min(1)).min(1),
+  locations: z.array(prayerLocationSchema).min(1),
+})
+
+const storeSchema = z.object({
+  title: z.string().min(1),
+  description: z.string().min(1),
+  isOpen: z.boolean(),
+  closedMessage: z.string().min(1),
+  stripe: z.object({
+    enabled: z.boolean(),
+    checkoutEndpoint: z.string().url().optional(),
+    successUrl: z.string().url().optional(),
+    cancelUrl: z.string().url().optional(),
+  }),
+  products: z
+    .array(
+      z.object({
+        id: z.string().min(1),
+        title: z.string().min(1),
+        description: z.string().min(1),
+        badge: z.string().min(1).optional(),
+        price: z.number().nonnegative(),
+        currency: z.string().min(1),
+        image: z.string().min(1),
+        media: z
+          .array(
+            z.object({
+              type: z.enum(['image', 'video']),
+              url: urlOrAbsolutePathSchema,
+              posterUrl: urlOrAbsolutePathSchema.optional(),
+              alt: z.string().min(1).optional(),
+            }),
+          )
+          .optional(),
+        enabled: z.boolean(),
+        checkoutUrl: z.string().url().optional(),
+        stripePriceId: z.string().min(1).optional(),
+      }),
+    )
+    .min(1),
+})
+
+const quranSchema = z.object({
+  title: z.string().min(1),
+  description: z.string().min(1),
+  apiBaseUrl: z.string().url(),
+  defaultChapterId: z.number().int().min(1).max(114),
+  defaultReciterId: z.number().int().positive(),
+  defaultScript: z.enum([
+    'text_uthmani',
+    'text_uthmani_tajweed',
+    'text_uthmani_simple',
+    'text_qpc_hafs',
+    'text_qpc_nastaleeq_hafs',
+    'text_indopak',
+    'text_imlaei',
+    'text_imlaei_simple',
+  ]),
+  defaultTranslationIds: z.array(z.number().int().positive()).min(1),
+  transliterationResourceId: z.number().int().positive(),
+  maxSelectableTranslations: z.number().int().min(1).max(8),
+})
+
+const hadithSchema = z.object({
+  title: z.string().min(1),
+  description: z.string().min(1),
+  apiBaseUrl: z.string().url(),
+  defaultCollectionId: z.string().min(1),
+  defaultHadithId: z.number().int().positive(),
+  collections: z
+    .array(
+      z.object({
+        id: z.string().min(1),
+        title: z.string().min(1),
+        subtitle: z.string().min(1),
+        description: z.string().min(1),
+        sourceSlug: z.string().min(1),
+        totalHadith: z.number().int().positive(),
+        coverImage: urlOrAbsolutePathSchema.optional(),
+        referenceUrl: z.string().url(),
+        pdfUrl: urlOrAbsolutePathSchema.optional(),
+      }),
+    )
+    .min(1),
+})
+
+const contactSchema = z.object({
+  title: z.string().min(1),
+  description: z.string().min(1),
+  statusText: z.string().min(1),
+})
+
+const cacheSchema = z.object({
+  quran: z.object({
+    bootstrapHours: z.number().positive(),
+    chapterVersesDays: z.number().positive(),
+    pageVersesDays: z.number().positive(),
+    chapterAudioHours: z.number().positive(),
+  }),
+  hadith: z.object({
+    entryDays: z.number().positive(),
+  }),
+  prayer: z.object({
+    londonFeedMinutes: z.number().positive(),
+    aladhanMinutes: z.number().positive(),
+  }),
+})
+
+const configCache = new Map<string, Promise<unknown>>()
+
+async function fetchConfig<T>(fileName: string, schema: z.ZodSchema<T>): Promise<T> {
+  const fileUrl = contentFileUrl(fileName)
+
+  if (!configCache.has(fileUrl)) {
+    configCache.set(
+      fileUrl,
+      fetch(fileUrl, { cache: 'no-cache' })
+        .then(async (response) => {
+          if (!response.ok) {
+            throw new Error(`Failed loading ${fileName}: ${response.status} ${response.statusText}`)
+          }
+
+          return response.json()
+        })
+        .then((data) => {
+          try {
+            return schema.parse(data)
+          } catch (error) {
+            if (error instanceof z.ZodError) {
+              const issue = error.issues[0]
+              const path = issue?.path?.join('.') || 'root'
+              throw new Error(`Invalid ${fileName} at "${path}": ${issue?.message ?? 'schema mismatch'}`, {
+                cause: error,
+              })
+            }
+            throw error
+          }
+        }),
+    )
+  }
+
+  return (await configCache.get(fileUrl)) as T
+}
+
+export interface SiteContent {
+  profile: ProfileConfig
+  links: LinksConfig
+  announcements: AnnouncementsConfig
+  prayer: PrayerConfig
+  store: StoreConfig
+  quran: QuranConfig
+  hadith: HadithConfig
+  contact: ContactConfig
+  cache: CacheConfig
+}
+
+export async function loadSiteContent(): Promise<SiteContent> {
+  const [profile, links, announcements, prayer, store, quran, hadith, contact, cache] = await Promise.all([
+    fetchConfig('profile.json', profileSchema),
+    fetchConfig('links.json', linksSchema),
+    fetchConfig('announcements.json', announcementsSchema),
+    fetchConfig('prayer.json', prayerSchema),
+    fetchConfig('store.json', storeSchema),
+    fetchConfig('quran.json', quranSchema),
+    fetchConfig('hadith.json', hadithSchema),
+    fetchConfig('contact.json', contactSchema),
+    fetchConfig('cache.json', cacheSchema),
+  ])
+
+  return {
+    profile,
+    links,
+    announcements,
+    prayer,
+    store,
+    quran,
+    hadith,
+    contact,
+    cache,
+  }
+}

@@ -1,0 +1,88 @@
+{
+  "heading": "Main Links",
+  "description": "These are pulled from your current Linktree setup and rendered as custom cards.",
+  "quickLinks": [
+    {
+      "id": "whatsapp-main",
+      "title": "The Rijal Club",
+      "subtitle": "WhatsApp Community • Free to join",
+      "url": "https://chat.whatsapp.com/ElJdWtSDkGU6weBUc1F0kY",
+      "icon": "whatsapp",
+      "featured": true
+    },
+    {
+      "id": "knowledge-class",
+      "title": "Wednesday Knowledge Class",
+      "subtitle": "Weekly learning circle",
+      "url": "https://chat.whatsapp.com/CcNy63e8fnH1rLNYs7jiSI",
+      "icon": "class"
+    },
+    {
+      "id": "instagram-events",
+      "title": "Instagram - Events & Reels",
+      "subtitle": "Latest posters, clips and updates",
+      "url": "https://instagram.com/therijalclub?igshid=MjEwN2IyYWYwYw==",
+      "icon": "instagram"
+    },
+    {
+      "id": "launchgood",
+      "title": "Syria Orphans Sponsorship",
+      "subtitle": "LaunchGood fundraiser",
+      "url": "http://LaunchGood.com/TheRijalClub",
+      "icon": "donate"
+    }
+  ],
+  "socials": [
+    { "platform": "Instagram", "url": "https://instagram.com/therijalclub" },
+    { "platform": "TikTok", "url": "https://tiktok.com/@therijalclub" },
+    {
+      "platform": "YouTube",
+      "url": "https://www.youtube.com/channel/UC-m6UrlGq1GbvJZDXhNdZSQ"
+    },
+    { "platform": "Linktree", "url": "https://linktr.ee/therijalclub" },
+    {
+      "platform": "WhatsApp",
+      "url": "https://chat.whatsapp.com/ElJdWtSDkGU6weBUc1F0kY"
+    }
+  ],
+  "adhanAlert": {
+    "enabled": true,
+    "title": "Adhan Alert",
+    "description": "If you are on the site exactly when a prayer starts, the adhan can auto-play. If you open after the configured window, it will not auto-play.",
+    "audioUrl": "https://upload.wikimedia.org/wikipedia/commons/b/b0/Beautiful_adhan.ogg",
+    "autoPlayWindowSeconds": 60
+  },
+  "resourceSections": [
+    {
+      "id": "islam",
+      "title": "Islamic Learning",
+      "icon": "book-open"
+    },
+    {
+      "id": "wellbeing",
+      "title": "Wellbeing & Mental Health",
+      "icon": "brain"
+    },
+    {
+      "id": "togetherness",
+      "title": "Community & Togetherness",
+      "icon": "handshake"
+    }
+  ],
+  "resources": [
+    {
+      "id": "nhs-mental-health",
+      "title": "NHS Mental Health",
+      "subtitle": "Official NHS guidance and support pathways for mental wellbeing.",
+      "url": "https://www.nhs.uk/mental-health/",
+      "sectionId": "wellbeing"
+    },
+    {
+      "id": "muslim-youth-helpline",
+      "title": "Muslim Youth Helpline",
+      "subtitle": "Faith-aware UK support service for young people.",
+      "url": "https://myh.org.uk/",
+      "sectionId": "wellbeing"
+    }
+  ]
+}

@@ -1,0 +1,151 @@
+{
+  "heading": "Announcements",
+  "description": "Latest updates, classes, events, reminders, and community opportunities from The Rijal Club.",
+  "items": [
+    {
+      "id": "ann-2026-03-08-knowledge-night",
+      "type": "image",
+      "title": "Knowledge Night This Friday",
+      "body": "Open youth circle after Isha. Bring a friend and your notebook. Tea and discussion after class.",
+      "publishedAt": "2026-03-08",
+      "mediaUrl": "/content/assets/images/announcement-poster-1.png",
+      "ctaLabel": "View Poster on Instagram",
+      "ctaUrl": "https://instagram.com/therijalclub"
+    },
+    {
+      "id": "ann-2026-03-06-football-league",
+      "type": "text",
+      "title": "Sunday Football League Sign-Up",
+      "body": "We are opening 6-a-side slots for brothers aged 14-21. Limited spaces. Confirm your team in the WhatsApp community.",
+      "publishedAt": "2026-03-06",
+      "ctaLabel": "Join WhatsApp",
+      "ctaUrl": "https://chat.whatsapp.com/ElJdWtSDkGU6weBUc1F0kY"
+    },
+    {
+      "id": "ann-2026-03-04-reel-highlight",
+      "type": "video",
+      "title": "Weekend Event Highlights",
+      "body": "Quick recap reel from the youth gathering and mentoring circles.",
+      "publishedAt": "2026-03-04",
+      "mediaUrl": "https://interactive-examples.mdn.mozilla.net/media/cc0-videos/flower.mp4",
+      "posterUrl": "/content/assets/images/announcement-poster-2.png",
+      "ctaLabel": "Watch on Instagram",
+      "ctaUrl": "https://www.instagram.com/therijalclub/"
+    },
+    {
+      "id": "ann-2026-03-01-volunteer-media",
+      "type": "text",
+      "title": "Volunteer Call: Media Team",
+      "body": "We are onboarding camera, editing, and design volunteers for upcoming sessions and charity drives.",
+      "publishedAt": "2026-03-01",
+      "ctaLabel": "Apply via WhatsApp",
+      "ctaUrl": "https://chat.whatsapp.com/ElJdWtSDkGU6weBUc1F0kY"
+    },
+    {
+      "id": "ann-2026-02-27-quran-revision",
+      "type": "text",
+      "title": "Quran Revision Circle (New Group)",
+      "body": "Weekly Tajweed + memorisation revision group starts this week. Beginner and intermediate tracks available.",
+      "publishedAt": "2026-02-27",
+      "ctaLabel": "Reserve a spot",
+      "ctaUrl": "https://chat.whatsapp.com/CcNy63e8fnH1rLNYs7jiSI"
+    },
+    {
+      "id": "ann-2026-02-24-charity-drive",
+      "type": "image",
+      "title": "Winter Charity Drive Update",
+      "body": "Jazakum Allahu khayran. Collection point remains open until Saturday evening.",
+      "publishedAt": "2026-02-24",
+      "mediaUrl": "/content/assets/images/announcement-poster-2.png",
+      "ctaLabel": "Donate Link",
+      "ctaUrl": "http://LaunchGood.com/TheRijalClub"
+    },
+    {
+      "id": "ann-2026-02-22-mentor-intake",
+      "type": "text",
+      "title": "Mentoring Intake Open",
+      "body": "1-to-1 youth mentoring signups are open for this cycle. Priority for ages 15-19.",
+      "publishedAt": "2026-02-22",
+      "ctaLabel": "Register Interest",
+      "ctaUrl": "https://chat.whatsapp.com/ElJdWtSDkGU6weBUc1F0kY"
+    },
+    {
+      "id": "ann-2026-02-20-knowledge-reminder",
+      "type": "image",
+      "title": "Knowledge Night Reminder",
+      "body": "Topic: sincerity and consistency in worship. Doors open 30 mins before start.",
+      "publishedAt": "2026-02-20",
+      "mediaUrl": "/content/assets/images/announcement-poster-1.png",
+      "ctaLabel": "Open Instagram",
+      "ctaUrl": "https://instagram.com/therijalclub"
+    },
+    {
+      "id": "ann-2026-02-18-volunteer-team-call",
+      "type": "text",
+      "title": "Volunteer Team Call",
+      "body": "We are opening volunteer roles across events, media, and youth mentoring. Message us on WhatsApp to join.",
+      "publishedAt": "2026-02-18",
+      "ctaLabel": "Join WhatsApp",
+      "ctaUrl": "https://chat.whatsapp.com/ElJdWtSDkGU6weBUc1F0kY"
+    },
+    {
+      "id": "ann-2026-02-16-parents-evening",
+      "type": "text",
+      "title": "Parents Listening Evening",
+      "body": "A short feedback evening for parents and guardians to help shape the next term plans.",
+      "publishedAt": "2026-02-16",
+      "ctaLabel": "Contact Team",
+      "ctaUrl": "https://www.instagram.com/therijalclub/"
+    },
+    {
+      "id": "ann-2026-02-14-event-highlights",
+      "type": "video",
+      "title": "Event Highlights Reel",
+      "body": "Short recap from recent sessions. Replace this URL with your own hosted clip or local file.",
+      "publishedAt": "2026-02-14",
+      "mediaUrl": "https://interactive-examples.mdn.mozilla.net/media/cc0-videos/flower.mp4",
+      "posterUrl": "/content/assets/images/announcement-poster-2.png",
+      "ctaLabel": "Watch More",
+      "ctaUrl": "https://www.instagram.com/therijalclub/"
+    },
+    {
+      "id": "ann-2026-02-11-brotherhood-hike",
+      "type": "image",
+      "title": "Brotherhood Hike Day",
+      "body": "Saturday outdoors day with reminders, team activities, and reflection stop points.",
+      "publishedAt": "2026-02-11",
+      "mediaUrl": "/content/assets/images/hero-identity.png",
+      "ctaLabel": "See Details",
+      "ctaUrl": "https://instagram.com/therijalclub"
+    },
+    {
+      "id": "ann-2026-02-09-fundraiser-update",
+      "type": "text",
+      "title": "Syria Sponsorship Update",
+      "body": "Alhamdulillah we crossed the latest target tier. Keep sharing and supporting the campaign.",
+      "publishedAt": "2026-02-09",
+      "ctaLabel": "Open LaunchGood",
+      "ctaUrl": "http://LaunchGood.com/TheRijalClub"
+    },
+    {
+      "id": "ann-2026-02-06-recap-video",
+      "type": "video",
+      "title": "Community Service Recap",
+      "body": "Highlights from the food-bank support morning and youth volunteer rotation.",
+      "publishedAt": "2026-02-06",
+      "mediaUrl": "https://interactive-examples.mdn.mozilla.net/media/cc0-videos/flower.mp4",
+      "posterUrl": "/content/assets/images/announcement-poster-1.png",
+      "ctaLabel": "View Reel",
+      "ctaUrl": "https://www.instagram.com/therijalclub/"
+    },
+    {
+      "id": "ann-2026-02-03-newcomers-welcome",
+      "type": "text",
+      "title": "Newcomers Welcome Session",
+      "body": "New to the club? Join a short welcome call to learn about classes, volunteering, and events.",
+      "publishedAt": "2026-02-03",
+      "ctaLabel": "Join Community",
+      "ctaUrl": "https://chat.whatsapp.com/ElJdWtSDkGU6weBUc1F0kY"
+    }
+  ]
+}
