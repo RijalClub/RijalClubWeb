@@ -1,22 +1,86 @@
-import { BrowserRouter as Router, Route, Routes } from "react-router-dom";
-import HomePage from "./pages/HomePage";
-import FootballPage from "./pages/FootballPage";
-import EventsPage from "./pages/EventsPage";
-import FitnessPage from "./pages/FitnessPage";
-import ProfilePage from "./pages/ProfilePage";
+import { useEffect, useState } from 'react'
+import { BrowserRouter, Navigate, Route, Routes } from 'react-router-dom'
 
-const App = () => {
+import { SiteShell } from '@/components/SiteShell'
+import { loadSiteContent, type SiteContent } from '@/lib/content'
+import { AnnouncementsPage } from '@/pages/AnnouncementsPage'
+import { ContactPage } from '@/pages/ContactPage'
+import { HomePage } from '@/pages/HomePage'
+import { LibraryPage } from '@/pages/LibraryPage'
+import { QuranPage } from '@/pages/QuranPage'
+import { StorePage } from '@/pages/StorePage'
+
+function LoadingScreen() {
   return (
-    <Router>
-      <Routes>
-        <Route path="/" element={<HomePage />} />
-        <Route path="/events" element={<EventsPage />} />
-        <Route path="/football" element={<FootballPage />} />
-        <Route path="/fitness" element={<FitnessPage />} />
-        <Route path="/profile" element={<ProfilePage />} />
-      </Routes>
-    </Router>
-  );
-};
+    <div className="status-screen">
+      <div className="status-card panel">
+        <h1>Loading The Rijal Club</h1>
+        <p>Pulling profile, links, announcements, prayer times, Quran, library, contact, store, and cache config.</p>
+      </div>
+    </div>
+  )
+}
 
-export default App;
+function ErrorScreen({ message }: { message: string }) {
+  return (
+    <div className="status-screen">
+      <div className="status-card panel">
+        <h1>Config load error</h1>
+        <p>{message}</p>
+        <button type="button" className="btn btn-solid" onClick={() => window.location.reload()}>
+          Reload
+        </button>
+      </div>
+    </div>
+  )
+}
+
+export default function App() {
+  const [content, setContent] = useState<SiteContent | null>(null)
+  const [errorMessage, setErrorMessage] = useState<string | null>(null)
+
+  useEffect(() => {
+    let isMounted = true
+
+    void loadSiteContent()
+      .then((result) => {
+        if (isMounted) {
+          setContent(result)
+          setErrorMessage(null)
+        }
+      })
+      .catch((error: unknown) => {
+        if (isMounted) {
+          setErrorMessage(error instanceof Error ? error.message : 'Unexpected error while loading content.')
+        }
+      })
+
+    return () => {
+      isMounted = false
+    }
+  }, [])
+
+  if (errorMessage) {
+    return <ErrorScreen message={errorMessage} />
+  }
+
+  if (!content) {
+    return <LoadingScreen />
+  }
+
+  return (
+    <BrowserRouter>
+      <SiteShell profile={content.profile}>
+        <Routes>
+          <Route path="/" element={<HomePage content={content} />} />
+          <Route path="/announcements" element={<AnnouncementsPage announcements={content.announcements} />} />
+          <Route path="/quran" element={<QuranPage config={content.quran} cache={content.cache.quran} />} />
+          <Route path="/library" element={<LibraryPage config={content.hadith} />} />
+          <Route path="/store" element={<StorePage store={content.store} profile={content.profile} />} />
+          <Route path="/contact" element={<ContactPage config={content.contact} />} />
+          <Route path="*" element={<Navigate to="/" replace />} />
+        </Routes>
+      </SiteShell>
+    </BrowserRouter>
+  )
+}

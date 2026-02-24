@@ -1,16 +1,62 @@
-import { Button } from "./ui/button"
+import { ArrowUpRight, Sparkles } from "lucide-react";
 
-const HeroSection = () => {
+import type { ProfileConfig } from "@/types/content";
+
+interface HeroSectionProps {
+  profile: ProfileConfig;
+}
+
+export function HeroSection({ profile }: HeroSectionProps) {
   return (
-    <div className="relative bg-cover bg-center h-[70vh] flex items-center justify-center text-white" style={{ backgroundImage: "url('/path/to/your/image.jpg')" }}>
-      <div className="absolute inset-0 bg-black opacity-50"></div>
-      <div className="relative z-10 text-center">
-        <h2 className="text-4xl font-bold mb-4">Paintballing</h2>
-        <p className="mb-8">Join The Rijal Club's Paintball Event</p>
-        <Button className="bg-red-500 hover:bg-red-700">Buy Tickets</Button>
-      </div>
-    </div>
-  );
-};
+    <section className="panel hero reveal">
+      <div className="hero-copy">
+        <p className="kicker">
+          <Sparkles size={16} />
+          Knowledgehood Collective
+        </p>
+        <h1>{profile.name}</h1>
+        <p className="hero-tagline">{profile.handle}</p>
+        <p className="hero-description">{profile.description}</p>
 
-export default HeroSection;
+        <div className="value-chips">
+          {profile.values.map((value) => (
+            <span key={value}>{value}</span>
+          ))}
+        </div>
+
+        <div className="hero-actions">
+          <a
+            href={profile.primaryCta.url}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="btn btn-solid"
+          >
+            {profile.primaryCta.label}
+            <ArrowUpRight size={16} />
+          </a>
+          <a
+            href={profile.secondaryCta.url}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="btn btn-ghost"
+          >
+            {profile.secondaryCta.label}
+          </a>
+        </div>
+
+        <div className="hero-stats">
+          {profile.stats.map((stat) => (
+            <article key={stat.label}>
+              <strong>{stat.value}</strong>
+              <span>{stat.label}</span>
+            </article>
+          ))}
+        </div>
+      </div>
+
+      <div className="hero-visual">
+        <img src={profile.heroImage} alt="Rijal Club hero" />
+      </div>
+    </section>
+  );
+}
