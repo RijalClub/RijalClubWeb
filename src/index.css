@@ -126,7 +126,7 @@ a {
 }
 
 .menu-toggle {
-  display: none;
+  display: none !important;
 }
 
 .site-nav a {
@@ -2198,7 +2198,7 @@ a {
   }
 
   .menu-toggle {
-    display: inline-flex;
+    display: inline-flex !important;
     flex-shrink: 0;
   }
 
