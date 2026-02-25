@@ -1,6 +1,6 @@
 import { CalculationMethod, Coordinates, HighLatitudeRule, Madhab, PrayerTimes } from 'adhan'
 
-import type { PrayerConfig, PrayerLocation, PrayerName } from '@/types/content'
+import type { AdhanMadhab, PrayerConfig, PrayerLocation, PrayerName } from '@/types/content'
 import { fetchJsonWithCache, fetchTextWithCache } from '@/lib/fetchCache'
 
 const prayerNames: PrayerName[] = ['Fajr', 'Sunrise', 'Dhuhr', 'Asr', 'Maghrib', 'Isha']
@@ -55,12 +55,19 @@ export interface Coordinate {
   longitude: number
 }
 
+export interface PrayerLoadOptions {
+  cacheTtlMs?: Partial<PrayerCacheTtlMs>
+  coordinateOverride?: Coordinate
+  adhanMadhabOverride?: AdhanMadhab
+}
+
 interface LondonUnifiedDay {
   date: string
   fajr?: string
   sunrise?: string
   dhuhr?: string
   asr?: string
+  asr_hanafi?: string
   maghrib?: string
   magrib?: string
   isha?: string
@@ -396,7 +403,7 @@ function pickLondonDayByLocalDate(days: LondonUnifiedDay[], now: Date): LondonUn
   return upcoming ?? days[0]
 }
 
-function requiredTime(day: LondonUnifiedDay, prayer: PrayerName): string {
+function requiredTime(day: LondonUnifiedDay, prayer: PrayerName, madhab: AdhanMadhab): string {
   switch (prayer) {
     case 'Fajr':
       return day.fajr ?? ''
@@ -405,7 +412,7 @@ function requiredTime(day: LondonUnifiedDay, prayer: PrayerName): string {
     case 'Dhuhr':
       return day.dhuhr ?? ''
     case 'Asr':
-      return day.asr ?? ''
+      return madhab === 'hanafi' ? (day.asr_hanafi ?? day.asr ?? '') : (day.asr ?? day.asr_hanafi ?? '')
     case 'Maghrib':
       return day.maghrib ?? day.magrib ?? ''
     case 'Isha':
@@ -415,9 +422,15 @@ function requiredTime(day: LondonUnifiedDay, prayer: PrayerName): string {
   }
 }
 
-function buildLondonDayPrayers(day: LondonUnifiedDay, location: PrayerLocation): PrayerSlot[] {
+function buildLondonDayPrayers(
+  day: LondonUnifiedDay,
+  location: PrayerLocation,
+  madhabOverride?: AdhanMadhab,
+): PrayerSlot[] {
+  const selectedMadhab = madhabOverride ?? location.adhanMadhab ?? 'shafi'
+
   return prayerNames.map((name) => {
-    const raw = requiredTime(day, name)
+    const raw = requiredTime(day, name, selectedMadhab)
     const offset = location.adjustments?.[name] ?? 0
 
     return {
@@ -427,7 +440,11 @@ function buildLondonDayPrayers(day: LondonUnifiedDay, location: PrayerLocation):
   })
 }
 
-async function loadLondonUnified7dTimes(location: PrayerLocation, ttlMs: number): Promise<PrayerTimesSnapshot> {
+async function loadLondonUnified7dTimes(
+  location: PrayerLocation,
+  ttlMs: number,
+  madhabOverride?: AdhanMadhab,
+): Promise<PrayerTimesSnapshot> {
   const payload = await fetchJsonWithCache<LondonUnifiedPayload>(location.officialSourceUrl, {
     ttlMs,
     cacheKey: `prayer:london-unified:${location.id}`,
@@ -445,11 +462,11 @@ async function loadLondonUnified7dTimes(location: PrayerLocation, ttlMs: number)
     .filter((day) => typeof day.date === 'string' && day.date.trim().length > 0)
     .map((day) => ({
       date: day.date,
-      prayers: buildLondonDayPrayers(day, location),
+      prayers: buildLondonDayPrayers(day, location, madhabOverride),
     }))
     .filter((day) => !day.prayers.some((slot) => slot.time24 === '00:00'))
 
-  const prayers = buildLondonDayPrayers(selectedDay, location)
+  const prayers = buildLondonDayPrayers(selectedDay, location, madhabOverride)
 
   if (prayers.some((slot) => slot.time24 === '00:00')) {
     throw new Error('London 7-day feed returned incomplete prayer times')
@@ -466,7 +483,12 @@ async function loadLondonUnified7dTimes(location: PrayerLocation, ttlMs: number)
   }
 }
 
-function buildAdhanDayPrayers(location: PrayerLocation, dateKey: string, coordinateOverride?: Coordinate): PrayerSlot[] {
+function buildAdhanDayPrayers(
+  location: PrayerLocation,
+  dateKey: string,
+  coordinateOverride?: Coordinate,
+  adhanMadhabOverride?: AdhanMadhab,
+): PrayerSlot[] {
   const parsed = parseDateKey(dateKey)
   if (!parsed) {
     return prayerNames.map((name) => ({ name, time24: '00:00' }))
@@ -478,7 +500,8 @@ function buildAdhanDayPrayers(location: PrayerLocation, dateKey: string, coordin
   )
   const method = location.adhanMethod ?? 'MuslimWorldLeague'
   const params = adhanCalculationFactories[method]()
-  params.madhab = location.adhanMadhab === 'hanafi' ? Madhab.Hanafi : Madhab.Shafi
+  const selectedMadhab = adhanMadhabOverride ?? location.adhanMadhab
+  params.madhab = selectedMadhab === 'hanafi' ? Madhab.Hanafi : Madhab.Shafi
   params.highLatitudeRule = resolveAdhanHighLatitudeRule(location, coordinates)
 
   const prayerTimes = new PrayerTimes(coordinates, new Date(parsed.year, parsed.month - 1, parsed.day), params)
@@ -502,14 +525,18 @@ function buildAdhanDayPrayers(location: PrayerLocation, dateKey: string, coordin
   })
 }
 
-async function loadAdhanTimes(location: PrayerLocation, coordinateOverride?: Coordinate): Promise<PrayerTimesSnapshot> {
+async function loadAdhanTimes(
+  location: PrayerLocation,
+  coordinateOverride?: Coordinate,
+  adhanMadhabOverride?: AdhanMadhab,
+): Promise<PrayerTimesSnapshot> {
   const now = new Date()
   const todayKey = getDateKeyInTimezone(location.timezone, now)
   const targetDates = Array.from({ length: 7 }, (_, index) => addDaysToDateKey(todayKey, index))
 
   const weekSchedule: PrayerDaySchedule[] = []
   for (const dateKey of targetDates) {
-    const prayers = buildAdhanDayPrayers(location, dateKey, coordinateOverride)
+    const prayers = buildAdhanDayPrayers(location, dateKey, coordinateOverride, adhanMadhabOverride)
     if (prayers.some((slot) => slot.time24 === '00:00')) {
       continue
     }
@@ -539,20 +566,19 @@ async function loadAdhanTimes(location: PrayerLocation, coordinateOverride?: Coo
 
 export async function loadPrayerTimesForLocation(
   location: PrayerLocation,
-  cacheTtlMs?: Partial<PrayerCacheTtlMs>,
-  coordinateOverride?: Coordinate,
+  options?: PrayerLoadOptions,
 ): Promise<PrayerTimesSnapshot> {
-  const iccukMs = cacheTtlMs?.iccukMs ?? DEFAULT_CACHE_TTL_MS
+  const iccukMs = options?.cacheTtlMs?.iccukMs ?? DEFAULT_CACHE_TTL_MS
 
   if (location.provider === 'iccuk_html') {
     return loadIccukTimes(location, iccukMs)
   }
 
   if (location.provider === 'london_unified_7d') {
-    return loadLondonUnified7dTimes(location, iccukMs)
+    return loadLondonUnified7dTimes(location, iccukMs, options?.adhanMadhabOverride)
   }
 
-  return loadAdhanTimes(location, coordinateOverride)
+  return loadAdhanTimes(location, options?.coordinateOverride, options?.adhanMadhabOverride)
 }
 
 export function buildPrayerTimeline(snapshot: PrayerTimesSnapshot, use24Hour: boolean, now = new Date()): PrayerTimeline {

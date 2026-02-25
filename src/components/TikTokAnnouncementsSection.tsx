@@ -185,7 +185,7 @@ function videoCreatedAtEpochSeconds(videoId: string): number | null {
 }
 
 function inferPinnedPrefixCount(items: TikTokPlaylistItem[]): number {
-  if (items.length < 4) {
+  if (items.length < 2) {
     return 0;
   }
 
@@ -195,10 +195,11 @@ function inferPinnedPrefixCount(items: TikTokPlaylistItem[]): number {
   }
 
   const numeric = timestamps as number[];
+  const maxPinned = Math.min(3, numeric.length - 1);
 
-  const isDescendingFrom = (start: number): boolean => {
-    for (let index = start; index < numeric.length - 1; index += 1) {
-      if (numeric[index] < numeric[index + 1]) {
+  const isDescending = (values: number[]): boolean => {
+    for (let index = 0; index < values.length - 1; index += 1) {
+      if (values[index] < values[index + 1]) {
         return false;
       }
     }
@@ -206,21 +207,24 @@ function inferPinnedPrefixCount(items: TikTokPlaylistItem[]): number {
     return true;
   };
 
-  for (let start = 0; start < numeric.length; start += 1) {
-    if (!isDescendingFrom(start)) {
+  for (let pinnedCount = 1; pinnedCount <= maxPinned; pinnedCount += 1) {
+    const suffix = numeric.slice(pinnedCount);
+    if (suffix.length === 0 || !isDescending(suffix)) {
       continue;
     }
 
-    if (start === 0) {
-      return 0;
-    }
+    const firstOrganicTimestamp = suffix[0];
+    const prefix = numeric.slice(0, pinnedCount);
+    const allPrefixNotNewer = prefix.every(
+      (timestamp) => timestamp <= firstOrganicTimestamp,
+    );
+    const anyPrefixOlder = prefix.some(
+      (timestamp) => timestamp < firstOrganicTimestamp,
+    );
 
-    const suffixLength = numeric.length - start;
-    if (suffixLength < Math.ceil(numeric.length / 2)) {
-      return 0;
+    if (allPrefixNotNewer && anyPrefixOlder) {
+      return pinnedCount;
     }
-
-    return start;
   }
 
   return 0;
@@ -463,7 +467,11 @@ export function TikTokAnnouncementsSection({
     <>
       <section className="panel reveal announcements-panel">
         <div className="section-heading">
-          <h2>{announcements.heading}</h2>
+          <h2>
+            <Link to={headingLink} className="section-heading-link">
+              {announcements.heading}
+            </Link>
+          </h2>
           <p>{announcements.description}</p>
         </div>
 

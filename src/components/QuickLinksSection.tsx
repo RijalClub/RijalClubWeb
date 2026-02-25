@@ -15,7 +15,7 @@ import {
 } from 'lucide-react'
 import { useEffect, useMemo, useRef, useState } from 'react'
 
-import { formatPrayerClock, type PrayerTimeline, type PrayerTimesSnapshot } from '@/lib/prayer'
+import { formatCountdown, formatPrayerClock, type PrayerTimeline, type PrayerTimesSnapshot } from '@/lib/prayer'
 import type { LinksConfig, ResourceSectionIcon } from '@/types/content'
 
 interface QuickLinksSectionProps {
@@ -46,6 +46,7 @@ const resourceSectionIconMap: Record<ResourceSectionIcon, typeof BookOpen> = {
 
 const ADHAN_ALERT_ENABLED_KEY = 'rijal:adhan-alert:enabled'
 const ADHAN_ALERT_LAST_PLAYED_KEY = 'rijal:adhan-alert:last-played'
+const PRAYER_CLOCK_24_KEY = 'rijal:prayer:clock24'
 
 function getDateKeyInTimezone(timezone: string, now: Date): string {
   const parts = new Intl.DateTimeFormat('en-CA', {
@@ -115,6 +116,13 @@ export function QuickLinksSection({ links, prayerSnapshot, prayerTimeline }: Qui
   const [isAudioPlaying, setIsAudioPlaying] = useState(false)
   const [statusMessage, setStatusMessage] = useState<string | null>(null)
   const audioRef = useRef<HTMLAudioElement | null>(null)
+  const [use24HourClock, setUse24HourClock] = useState<boolean>(() => {
+    if (typeof window === 'undefined') {
+      return false
+    }
+
+    return window.localStorage.getItem(PRAYER_CLOCK_24_KEY) === 'true'
+  })
   const [isAdhanAlertEnabled, setIsAdhanAlertEnabled] = useState<boolean>(() => {
     if (typeof window === 'undefined') {
       return adhanAlert?.enabled ?? true
@@ -154,6 +162,14 @@ export function QuickLinksSection({ links, prayerSnapshot, prayerTimeline }: Qui
     const interval = window.setInterval(() => setClockTick((value) => value + 1), 10_000)
     return () => window.clearInterval(interval)
   }, [])
+
+  useEffect(() => {
+    if (typeof window === 'undefined') {
+      return
+    }
+
+    setUse24HourClock(window.localStorage.getItem(PRAYER_CLOCK_24_KEY) === 'true')
+  }, [clockTick])
 
   useEffect(() => {
     if (typeof window === 'undefined') {
@@ -294,8 +310,8 @@ export function QuickLinksSection({ links, prayerSnapshot, prayerTimeline }: Qui
           <p className="source-note">{adhanAlert.description}</p>
           {prayerTimeline ? (
             <p className="source-note">
-              Next: <strong>{prayerTimeline.next.name}</strong> at {formatPrayerClock(prayerTimeline.next.time24, false)} (
-              {prayerTimeline.minutesUntilNext}m)
+              Next: <strong>{prayerTimeline.next.name}</strong> at {formatPrayerClock(prayerTimeline.next.time24, use24HourClock)} in{' '}
+              <strong>{formatCountdown(prayerTimeline.minutesUntilNext)}</strong>
             </p>
           ) : null}
           <div className="adhan-alert-actions">

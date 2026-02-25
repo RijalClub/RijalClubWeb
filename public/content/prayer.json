@@ -44,7 +44,8 @@
       "longitude": -0.1543,
       "provider": "london_unified_7d",
       "officialSourceLabel": "London unified 7-day timetable",
-      "officialSourceUrl": "https://raw.githubusercontent.com/nasimali/london-prayer-times-unified-auto/release/london-prayer-times/data/london-prayer-times-7d.json"
+      "officialSourceUrl": "https://raw.githubusercontent.com/nasimali/london-prayer-times-unified-auto/release/london-prayer-times/data/london-prayer-times-7d.json",
+      "adhanMadhab": "shafi"
     },
     {
       "id": "uk-ireland-moonsighting",

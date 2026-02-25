@@ -1,9 +1,9 @@
 {
   "heading": "Announcements",
-  "description": "Latest clips from TikTok, auto-fetched and rendered as swipeable update cards.",
+  "description": "Latest clips from TikTok.",
   "homeFeed": {
     "accountUrl": "https://www.tiktok.com/@therijalclub",
-    "maxItems": 4,
+    "maxItems": 5,
     "excludePinnedPosts": true,
     "oembedEndpoint": "https://www.tiktok.com/oembed",
     "embedProfileUrl": "https://www.tiktok.com/embed/@therijalclub",

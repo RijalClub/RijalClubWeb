@@ -1,4 +1,4 @@
-import { CalendarDays, LocateFixed, RefreshCw } from 'lucide-react'
+import { CalendarDays, LocateFixed, RefreshCw, RotateCcw } from 'lucide-react'
 import { useCallback, useEffect, useMemo, useState } from 'react'
 
 import {
@@ -10,7 +10,7 @@ import {
   type PrayerTimeline,
   type PrayerTimesSnapshot,
 } from '@/lib/prayer'
-import type { PrayerCacheConfig, PrayerConfig } from '@/types/content'
+import type { AdhanMadhab, PrayerCacheConfig, PrayerConfig } from '@/types/content'
 
 interface PrayerTimesWidgetProps {
   config: PrayerConfig
@@ -24,6 +24,10 @@ interface GeoCoordinate {
 }
 
 const LAST_DEVICE_COORDS_KEY = 'rijal:prayer:last-device-coords'
+const SELECTED_LOCATION_KEY = 'rijal:prayer:selected-location-id'
+const USE_DEVICE_COORDS_KEY = 'rijal:prayer:use-device-coords'
+const CLOCK_24_KEY = 'rijal:prayer:clock24'
+const MADHAB_OVERRIDES_KEY = 'rijal:prayer:madhab-overrides:v1'
 
 function loadStoredDeviceCoords(): GeoCoordinate | null {
   if (typeof window === 'undefined') {
@@ -53,6 +57,35 @@ function loadStoredDeviceCoords(): GeoCoordinate | null {
   }
 }
 
+function loadStoredMadhabOverrides(): Record<string, AdhanMadhab> {
+  if (typeof window === 'undefined') {
+    return {}
+  }
+
+  try {
+    const raw = window.localStorage.getItem(MADHAB_OVERRIDES_KEY)
+    if (!raw) {
+      return {}
+    }
+
+    const parsed = JSON.parse(raw) as unknown
+    if (!parsed || typeof parsed !== 'object') {
+      return {}
+    }
+
+    const result: Record<string, AdhanMadhab> = {}
+    for (const [locationId, value] of Object.entries(parsed as Record<string, unknown>)) {
+      if ((value === 'shafi' || value === 'hanafi') && locationId.trim().length > 0) {
+        result[locationId] = value
+      }
+    }
+
+    return result
+  } catch {
+    return {}
+  }
+}
+
 function formatPrayerDateLabel(dateKey: string): string {
   const parsed = new Date(`${dateKey}T12:00:00`)
 
@@ -76,7 +109,18 @@ export function PrayerTimesWidget({ config, cache, onPrayerDataChange }: PrayerT
     [config, timezone, storedCoords],
   )
 
-  const [selectedLocationId, setSelectedLocationId] = useState(() => defaultLocation.id)
+  const [selectedLocationId, setSelectedLocationId] = useState(() => {
+    if (typeof window === 'undefined') {
+      return defaultLocation.id
+    }
+
+    const stored = window.localStorage.getItem(SELECTED_LOCATION_KEY)
+    if (stored && config.locations.some((location) => location.id === stored)) {
+      return stored
+    }
+
+    return defaultLocation.id
+  })
   const [snapshot, setSnapshot] = useState<PrayerTimesSnapshot | null>(null)
   const [isLoading, setIsLoading] = useState(true)
   const [errorMessage, setErrorMessage] = useState<string | null>(null)
@@ -84,14 +128,26 @@ export function PrayerTimesWidget({ config, cache, onPrayerDataChange }: PrayerT
   const [clockTick, setClockTick] = useState(0)
   const [selectedWeekDate, setSelectedWeekDate] = useState<string | null>(null)
   const [deviceCoords, setDeviceCoords] = useState<GeoCoordinate | null>(storedCoords)
-  const [useDeviceCoords, setUseDeviceCoords] = useState(Boolean(storedCoords))
+  const [useDeviceCoords, setUseDeviceCoords] = useState<boolean>(() => {
+    if (typeof window === 'undefined') {
+      return Boolean(storedCoords)
+    }
+
+    const stored = window.localStorage.getItem(USE_DEVICE_COORDS_KEY)
+    if (!stored) {
+      return Boolean(storedCoords)
+    }
+
+    return stored === 'true'
+  })
   const [use24Hour, setUse24Hour] = useState<boolean>(() => {
     if (typeof window === 'undefined') {
       return false
     }
 
-    return window.localStorage.getItem('rijal:prayer:clock24') === 'true'
+    return window.localStorage.getItem(CLOCK_24_KEY) === 'true'
   })
+  const [madhabOverrides, setMadhabOverrides] = useState<Record<string, AdhanMadhab>>(() => loadStoredMadhabOverrides())
 
   const selectedLocation = useMemo(
     () =>
@@ -99,6 +155,14 @@ export function PrayerTimesWidget({ config, cache, onPrayerDataChange }: PrayerT
       defaultLocation,
     [config.locations, defaultLocation, selectedLocationId],
   )
+
+  const selectedMadhab = useMemo<AdhanMadhab | null>(() => {
+    if (selectedLocation.provider === 'iccuk_html') {
+      return null
+    }
+
+    return madhabOverrides[selectedLocation.id] ?? selectedLocation.adhanMadhab ?? 'shafi'
+  }, [madhabOverrides, selectedLocation])
 
   const adhanCoordinateOverride = useMemo(() => {
     if (!useDeviceCoords || !deviceCoords) {
@@ -115,9 +179,13 @@ export function PrayerTimesWidget({ config, cache, onPrayerDataChange }: PrayerT
     setIsLoading(true)
     try {
       const result = await loadPrayerTimesForLocation(selectedLocation, {
-        iccukMs: Math.max(1, cache.londonFeedMinutes) * 60_000,
-        adhanMs: Math.max(1, cache.aladhanMinutes) * 60_000,
-      }, adhanCoordinateOverride)
+        cacheTtlMs: {
+          iccukMs: Math.max(1, cache.londonFeedMinutes) * 60_000,
+          adhanMs: Math.max(1, cache.aladhanMinutes) * 60_000,
+        },
+        coordinateOverride: adhanCoordinateOverride,
+        adhanMadhabOverride: selectedMadhab ?? undefined,
+      })
       setSnapshot(result)
       setErrorMessage(null)
     } catch (error) {
@@ -125,7 +193,7 @@ export function PrayerTimesWidget({ config, cache, onPrayerDataChange }: PrayerT
     } finally {
       setIsLoading(false)
     }
-  }, [adhanCoordinateOverride, cache.aladhanMinutes, cache.londonFeedMinutes, selectedLocation])
+  }, [adhanCoordinateOverride, cache.aladhanMinutes, cache.londonFeedMinutes, selectedLocation, selectedMadhab])
 
   useEffect(() => {
     void reloadTimes()
@@ -150,7 +218,7 @@ export function PrayerTimesWidget({ config, cache, onPrayerDataChange }: PrayerT
       return
     }
 
-    window.localStorage.setItem('rijal:prayer:clock24', String(use24Hour))
+    window.localStorage.setItem(CLOCK_24_KEY, String(use24Hour))
   }, [use24Hour])
 
   useEffect(() => {
@@ -160,6 +228,35 @@ export function PrayerTimesWidget({ config, cache, onPrayerDataChange }: PrayerT
 
     window.localStorage.setItem(LAST_DEVICE_COORDS_KEY, JSON.stringify(deviceCoords))
   }, [deviceCoords])
+
+  useEffect(() => {
+    if (typeof window === 'undefined') {
+      return
+    }
+
+    window.localStorage.setItem(USE_DEVICE_COORDS_KEY, String(useDeviceCoords))
+  }, [useDeviceCoords])
+
+  useEffect(() => {
+    if (typeof window === 'undefined') {
+      return
+    }
+
+    window.localStorage.setItem(SELECTED_LOCATION_KEY, selectedLocationId)
+  }, [selectedLocationId])
+
+  useEffect(() => {
+    if (typeof window === 'undefined') {
+      return
+    }
+
+    if (Object.keys(madhabOverrides).length === 0) {
+      window.localStorage.removeItem(MADHAB_OVERRIDES_KEY)
+      return
+    }
+
+    window.localStorage.setItem(MADHAB_OVERRIDES_KEY, JSON.stringify(madhabOverrides))
+  }, [madhabOverrides])
 
   const timeline = useMemo(() => {
     if (!snapshot) {
@@ -242,6 +339,26 @@ export function PrayerTimesWidget({ config, cache, onPrayerDataChange }: PrayerT
     )
   }
 
+  const handleResetPreferences = (): void => {
+    setSelectedLocationId(defaultLocation.id)
+    setSelectedWeekDate(null)
+    setUse24Hour(false)
+    setUseDeviceCoords(false)
+    setDeviceCoords(null)
+    setMadhabOverrides({})
+    setErrorMessage(null)
+
+    if (typeof window === 'undefined') {
+      return
+    }
+
+    window.localStorage.removeItem(SELECTED_LOCATION_KEY)
+    window.localStorage.removeItem(USE_DEVICE_COORDS_KEY)
+    window.localStorage.removeItem(LAST_DEVICE_COORDS_KEY)
+    window.localStorage.removeItem(CLOCK_24_KEY)
+    window.localStorage.removeItem(MADHAB_OVERRIDES_KEY)
+  }
+
   return (
     <section className="panel reveal prayer-panel">
       <div className="section-heading prayer-heading">
@@ -290,6 +407,44 @@ export function PrayerTimesWidget({ config, cache, onPrayerDataChange }: PrayerT
           ))}
         </select>
       </label>
+
+      <div className="prayer-option-row">
+        {selectedLocation.provider !== 'iccuk_html' ? (
+          <div className="madhab-toggle" role="group" aria-label="Madhab">
+            <span>Madhab</span>
+            <button
+              type="button"
+              className={selectedMadhab === 'shafi' ? 'madhab-btn active' : 'madhab-btn'}
+              onClick={() => {
+                setMadhabOverrides((current) => ({
+                  ...current,
+                  [selectedLocation.id]: 'shafi',
+                }))
+              }}
+            >
+              Shafi
+            </button>
+            <button
+              type="button"
+              className={selectedMadhab === 'hanafi' ? 'madhab-btn active' : 'madhab-btn'}
+              onClick={() => {
+                setMadhabOverrides((current) => ({
+                  ...current,
+                  [selectedLocation.id]: 'hanafi',
+                }))
+              }}
+            >
+              Hanafi
+            </button>
+          </div>
+        ) : (
+          <p className="source-note">Madhab selector is not available for this source.</p>
+        )}
+        <button type="button" className="icon-btn prayer-reset-btn" onClick={handleResetPreferences}>
+          <RotateCcw size={13} />
+          Reset prefs
+        </button>
+      </div>
 
       {isLoading ? <p className="state-text">Loading prayer times…</p> : null}
       {errorMessage ? <p className="state-text error">{errorMessage}</p> : null}
