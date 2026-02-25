@@ -110,6 +110,111 @@ function findDuePrayer(snapshot: PrayerTimesSnapshot, windowSeconds: number, now
   }
 }
 
+function parseTimezoneOffsetMinutes(value: string): number | null {
+  if (value === 'GMT' || value === 'UTC') {
+    return 0
+  }
+
+  const match = value.match(/^GMT([+-])(\d{1,2})(?::?(\d{2}))?$/)
+  if (!match) {
+    return null
+  }
+
+  const sign = match[1] === '-' ? -1 : 1
+  const hours = Number.parseInt(match[2], 10)
+  const minutes = Number.parseInt(match[3] ?? '0', 10)
+  if (Number.isNaN(hours) || Number.isNaN(minutes)) {
+    return null
+  }
+
+  return sign * (hours * 60 + minutes)
+}
+
+function getTimezoneOffsetMinutes(timezone: string, instant: Date): number | null {
+  const parts = new Intl.DateTimeFormat('en-US', {
+    hour: '2-digit',
+    minute: '2-digit',
+    hour12: false,
+    timeZone: timezone,
+    timeZoneName: 'shortOffset',
+  }).formatToParts(instant)
+
+  const zoneName = parts.find((part) => part.type === 'timeZoneName')?.value
+  if (!zoneName) {
+    return null
+  }
+
+  return parseTimezoneOffsetMinutes(zoneName)
+}
+
+function getPrayerTimestampMs(timezone: string, dateKey: string, time24: string): number | null {
+  const [yearRaw, monthRaw, dayRaw] = dateKey.split('-')
+  const [hoursRaw, minutesRaw] = time24.split(':')
+  const year = Number.parseInt(yearRaw ?? '', 10)
+  const month = Number.parseInt(monthRaw ?? '', 10)
+  const day = Number.parseInt(dayRaw ?? '', 10)
+  const hours = Number.parseInt(hoursRaw ?? '', 10)
+  const minutes = Number.parseInt(minutesRaw ?? '', 10)
+
+  if (
+    Number.isNaN(year) ||
+    Number.isNaN(month) ||
+    Number.isNaN(day) ||
+    Number.isNaN(hours) ||
+    Number.isNaN(minutes)
+  ) {
+    return null
+  }
+
+  const naiveUtcMs = Date.UTC(year, month - 1, day, hours, minutes, 0, 0)
+  let resolvedMs = naiveUtcMs
+
+  // Resolve timezone offsets safely across DST boundaries.
+  for (let attempt = 0; attempt < 2; attempt += 1) {
+    const offsetMinutes = getTimezoneOffsetMinutes(timezone, new Date(resolvedMs))
+    if (offsetMinutes == null) {
+      return null
+    }
+
+    const adjustedMs = naiveUtcMs - offsetMinutes * 60_000
+    if (adjustedMs === resolvedMs) {
+      break
+    }
+
+    resolvedMs = adjustedMs
+  }
+
+  return resolvedMs
+}
+
+function findNextPrayerTrigger(snapshot: PrayerTimesSnapshot, now = new Date()) {
+  let next: { date: string; prayer: { name: string; time24: string }; delayMs: number } | null = null
+
+  for (const day of snapshot.weekSchedule ?? []) {
+    for (const prayer of day.prayers) {
+      const timestampMs = getPrayerTimestampMs(snapshot.location.timezone, day.date, prayer.time24)
+      if (timestampMs == null) {
+        continue
+      }
+
+      const delayMs = timestampMs - now.getTime()
+      if (delayMs < 0) {
+        continue
+      }
+
+      if (!next || delayMs < next.delayMs) {
+        next = {
+          date: day.date,
+          prayer: { name: prayer.name, time24: prayer.time24 },
+          delayMs,
+        }
+      }
+    }
+  }
+
+  return next
+}
+
 export function QuickLinksSection({ links, prayerSnapshot, prayerTimeline }: QuickLinksSectionProps) {
   const adhanAlert = links.adhanAlert
   const [clockTick, setClockTick] = useState(0)
@@ -159,17 +264,75 @@ export function QuickLinksSection({ links, prayerSnapshot, prayerTimeline }: Qui
   }, [links.resourceSections, links.resources])
 
   useEffect(() => {
-    const interval = window.setInterval(() => setClockTick((value) => value + 1), 10_000)
-    return () => window.clearInterval(interval)
+    if (typeof window === 'undefined') {
+      return
+    }
+
+    const syncClockPreference = (): void => {
+      setUse24HourClock(window.localStorage.getItem(PRAYER_CLOCK_24_KEY) === 'true')
+    }
+
+    const onVisibilityChange = (): void => {
+      if (document.visibilityState === 'visible') {
+        syncClockPreference()
+      }
+    }
+
+    syncClockPreference()
+    window.addEventListener('storage', syncClockPreference)
+    window.addEventListener('focus', syncClockPreference)
+    document.addEventListener('visibilitychange', onVisibilityChange)
+
+    return () => {
+      window.removeEventListener('storage', syncClockPreference)
+      window.removeEventListener('focus', syncClockPreference)
+      document.removeEventListener('visibilitychange', onVisibilityChange)
+    }
   }, [])
+
+  useEffect(() => {
+    if (!adhanAlert?.enabled || !prayerSnapshot || !isAdhanAlertEnabled) {
+      return
+    }
+
+    const nextPrayer = findNextPrayerTrigger(prayerSnapshot)
+    if (!nextPrayer) {
+      return
+    }
+
+    const guardMs = Math.max(1_500, Math.min(5_000, adhanAlert.autoPlayWindowSeconds * 1_000))
+    const delayMs = Math.max(0, nextPrayer.delayMs)
+    const notifyTick = (): void => setClockTick((value) => value + 1)
+
+    const exactTimer = window.setTimeout(notifyTick, delayMs)
+    const guardTimer = window.setTimeout(notifyTick, delayMs + guardMs)
+
+    return () => {
+      window.clearTimeout(exactTimer)
+      window.clearTimeout(guardTimer)
+    }
+  }, [adhanAlert?.autoPlayWindowSeconds, adhanAlert?.enabled, clockTick, isAdhanAlertEnabled, prayerSnapshot])
 
   useEffect(() => {
     if (typeof window === 'undefined') {
       return
     }
 
-    setUse24HourClock(window.localStorage.getItem(PRAYER_CLOCK_24_KEY) === 'true')
-  }, [clockTick])
+    const resumeCheck = (): void => setClockTick((value) => value + 1)
+    const onVisibilityChange = (): void => {
+      if (document.visibilityState === 'visible') {
+        resumeCheck()
+      }
+    }
+
+    window.addEventListener('focus', resumeCheck)
+    document.addEventListener('visibilitychange', onVisibilityChange)
+
+    return () => {
+      window.removeEventListener('focus', resumeCheck)
+      document.removeEventListener('visibilitychange', onVisibilityChange)
+    }
+  }, [])
 
   useEffect(() => {
     if (typeof window === 'undefined') {
@@ -224,7 +387,7 @@ export function QuickLinksSection({ links, prayerSnapshot, prayerTimeline }: Qui
         setStatusMessage(`Adhan started for ${duePrayer.prayer.name}.`)
       })
       .catch(() => {
-        setStatusMessage('Autoplay is blocked by browser. Tap play once to allow audio alerts.')
+        setStatusMessage('Autoplay could not start. Browser autoplay rules or unsupported audio format may block it.')
       })
   }, [adhanAlert?.enabled, duePrayer, isAdhanAlertEnabled, prayerSnapshot?.location.id])
 
