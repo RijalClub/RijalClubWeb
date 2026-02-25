@@ -1,4 +1,4 @@
-import { BookMarked, FileText, SquareArrowOutUpRight } from 'lucide-react'
+import { BookMarked, FileText, SquareArrowOutUpRight, X } from 'lucide-react'
 import { useEffect, useMemo, useState } from 'react'
 
 import type { HadithCollectionConfig, HadithConfig } from '@/types/content'
@@ -6,6 +6,8 @@ import type { HadithCollectionConfig, HadithConfig } from '@/types/content'
 interface LibraryPageProps {
   config: HadithConfig
 }
+
+const MOBILE_TABLET_QUERY = '(max-width: 1024px)'
 
 function loadStoredString(key: string, fallback: string): string {
   if (typeof window === 'undefined') {
@@ -21,10 +23,18 @@ function fallbackCollection(config: HadithConfig): HadithCollectionConfig {
 
 export function LibraryPage({ config }: LibraryPageProps) {
   const defaultCollection = useMemo(() => fallbackCollection(config), [config])
+  const [isCompactScreen, setIsCompactScreen] = useState(() => {
+    if (typeof window === 'undefined' || typeof window.matchMedia !== 'function') {
+      return false
+    }
+
+    return window.matchMedia(MOBILE_TABLET_QUERY).matches
+  })
 
   const [collectionId, setCollectionId] = useState(() =>
     loadStoredString('rijal:library:collection', defaultCollection.id),
   )
+  const [isPdfModalOpen, setIsPdfModalOpen] = useState(false)
 
   const selectedCollection = useMemo(
     () => config.collections.find((collection) => collection.id === collectionId) ?? defaultCollection,
@@ -38,6 +48,51 @@ export function LibraryPage({ config }: LibraryPageProps) {
 
     window.localStorage.setItem('rijal:library:collection', selectedCollection.id)
   }, [selectedCollection.id])
+
+  useEffect(() => {
+    if (typeof window === 'undefined' || typeof window.matchMedia !== 'function') {
+      return
+    }
+
+    const mediaQuery = window.matchMedia(MOBILE_TABLET_QUERY)
+    const onChange = (event: MediaQueryListEvent): void => {
+      setIsCompactScreen(event.matches)
+    }
+
+    setIsCompactScreen(mediaQuery.matches)
+    mediaQuery.addEventListener('change', onChange)
+
+    return () => {
+      mediaQuery.removeEventListener('change', onChange)
+    }
+  }, [])
+
+  useEffect(() => {
+    if (!isCompactScreen && isPdfModalOpen) {
+      setIsPdfModalOpen(false)
+    }
+  }, [isCompactScreen, isPdfModalOpen])
+
+  useEffect(() => {
+    if (!isPdfModalOpen || typeof document === 'undefined') {
+      return
+    }
+
+    const previousOverflow = document.body.style.overflow
+    document.body.style.overflow = 'hidden'
+
+    const onKeyDown = (event: KeyboardEvent): void => {
+      if (event.key === 'Escape') {
+        setIsPdfModalOpen(false)
+      }
+    }
+
+    window.addEventListener('keydown', onKeyDown)
+    return () => {
+      document.body.style.overflow = previousOverflow
+      window.removeEventListener('keydown', onKeyDown)
+    }
+  }, [isPdfModalOpen])
 
   return (
     <main className="page-grid library-page">
@@ -89,18 +144,27 @@ export function LibraryPage({ config }: LibraryPageProps) {
                 {selectedCollection.title} PDF
               </p>
               <div className="library-link-row">
+                {isCompactScreen ? (
+                  <button type="button" className="btn btn-solid" onClick={() => setIsPdfModalOpen(true)}>
+                    Open fullscreen reader
+                  </button>
+                ) : null}
                 <a href={selectedCollection.pdfUrl} target="_blank" rel="noopener noreferrer" className="inline-link">
                   Open in new tab
                   <SquareArrowOutUpRight size={12} />
                 </a>
               </div>
             </header>
-            <iframe
-              src={selectedCollection.pdfUrl}
-              title={`${selectedCollection.title} PDF`}
-              loading="lazy"
-              referrerPolicy="no-referrer"
-            />
+            {isCompactScreen ? (
+              <p className="source-note">Use the fullscreen reader for a better mobile/tablet PDF experience.</p>
+            ) : (
+              <iframe
+                src={selectedCollection.pdfUrl}
+                title={`${selectedCollection.title} PDF`}
+                loading="lazy"
+                referrerPolicy="no-referrer"
+              />
+            )}
           </article>
         ) : (
           <article className="library-pdf-card">
@@ -108,6 +172,31 @@ export function LibraryPage({ config }: LibraryPageProps) {
           </article>
         )}
       </section>
+
+      {isCompactScreen && isPdfModalOpen && selectedCollection.pdfUrl ? (
+        <div className="library-pdf-modal" role="dialog" aria-modal="true" aria-label={`${selectedCollection.title} PDF reader`}>
+          <div className="library-pdf-modal-overlay" onClick={() => setIsPdfModalOpen(false)} aria-hidden="true" />
+          <section className="library-pdf-modal-panel panel">
+            <header className="library-pdf-modal-header">
+              <p className="kicker">
+                <FileText size={14} />
+                {selectedCollection.title}
+              </p>
+              <button type="button" className="icon-btn" onClick={() => setIsPdfModalOpen(false)} aria-label="Close PDF reader">
+                <X size={15} />
+                Close
+              </button>
+            </header>
+            <iframe
+              src={selectedCollection.pdfUrl}
+              title={`${selectedCollection.title} fullscreen PDF`}
+              loading="lazy"
+              referrerPolicy="no-referrer"
+              className="library-pdf-modal-frame"
+            />
+          </section>
+        </div>
+      ) : null}
     </main>
   )
 }

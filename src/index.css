@@ -2036,6 +2036,50 @@ a {
   background: rgba(0, 0, 0, 0.2);
 }
 
+.library-pdf-modal {
+  position: fixed;
+  inset: 0;
+  z-index: 150;
+  display: grid;
+  place-items: center;
+  padding: 0.75rem;
+}
+
+.library-pdf-modal-overlay {
+  position: absolute;
+  inset: 0;
+  background: rgba(2, 4, 7, 0.85);
+  backdrop-filter: blur(4px);
+}
+
+.library-pdf-modal-panel {
+  position: relative;
+  width: min(1120px, 100%);
+  max-height: calc(100dvh - 1.5rem);
+  overflow: hidden;
+  padding: 0.75rem;
+  display: grid;
+  grid-template-rows: auto 1fr;
+  gap: 0.6rem;
+}
+
+.library-pdf-modal-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.6rem;
+  flex-wrap: wrap;
+}
+
+.library-pdf-modal-frame {
+  width: 100%;
+  height: 100%;
+  min-height: 65dvh;
+  border: 1px solid var(--line);
+  border-radius: 10px;
+  background: rgba(0, 0, 0, 0.2);
+}
+
 .contact-form-card {
   padding: 1.2rem;
 }
@@ -2183,6 +2227,26 @@ a {
 
   .content-modal-panel {
     width: min(860px, 100%);
+  }
+
+  .library-pdf-modal {
+    padding: 0;
+  }
+
+  .library-pdf-modal-panel {
+    width: 100%;
+    height: 100dvh;
+    max-height: 100dvh;
+    border-radius: 0;
+    border-left: 0;
+    border-right: 0;
+    border-bottom: 0;
+    padding: 0.65rem;
+  }
+
+  .library-pdf-modal-frame {
+    min-height: 0;
+    height: 100%;
   }
 }
 
