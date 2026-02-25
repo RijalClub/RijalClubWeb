@@ -74,14 +74,22 @@ a {
 }
 
 .site-header {
-  display: flex;
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
   align-items: center;
-  justify-content: space-between;
   gap: 1rem;
   padding: 0.85rem 1.1rem;
   position: sticky;
   top: 1rem;
   z-index: 30;
+}
+
+.site-header-top {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.8rem;
+  min-width: 0;
 }
 
 .brand-link {
@@ -115,6 +123,10 @@ a {
   gap: 0.5rem;
   flex-wrap: wrap;
   justify-content: flex-end;
+}
+
+.menu-toggle {
+  display: none;
 }
 
 .site-nav a {
@@ -424,6 +436,13 @@ a {
   align-items: center;
   justify-content: space-between;
   gap: 0.55rem;
+  flex-wrap: wrap;
+}
+
+.adhan-mini-top-actions {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
   flex-wrap: wrap;
 }
 
@@ -2174,12 +2193,31 @@ a {
 
   .site-header {
     position: static;
-    flex-direction: column;
+    grid-template-columns: 1fr;
     align-items: stretch;
   }
 
+  .menu-toggle {
+    display: inline-flex;
+    flex-shrink: 0;
+  }
+
   .site-nav {
+    display: none;
     justify-content: flex-start;
+    align-items: stretch;
+    flex-direction: column;
+    gap: 0.35rem;
+    width: 100%;
+  }
+
+  .site-nav.open {
+    display: flex;
+  }
+
+  .site-nav a {
+    width: 100%;
+    text-align: left;
   }
 
   .hero-copy {

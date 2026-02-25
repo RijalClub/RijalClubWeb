@@ -1,4 +1,4 @@
-import { Pause, Play, Radio, Volume2, VolumeX } from 'lucide-react'
+import { Pause, Play, Radio, Volume2, VolumeX, X } from 'lucide-react'
 import {
   createContext,
   useCallback,
@@ -327,6 +327,7 @@ export function AdhanAlertProvider({ links, prayerConfig, prayerCache, children 
 
     return window.localStorage.getItem(ADHAN_ALERT_MUTED_KEY) === 'true'
   })
+  const [dismissedDueMarker, setDismissedDueMarker] = useState<string | null>(null)
 
   const duePrayer = useMemo(() => {
     if (!adhanAlert?.enabled || !prayerSnapshot || !isAdhanAlertEnabled) {
@@ -335,6 +336,13 @@ export function AdhanAlertProvider({ links, prayerConfig, prayerCache, children 
 
     return findDuePrayer(prayerSnapshot, adhanAlert.autoPlayWindowSeconds)
   }, [adhanAlert?.autoPlayWindowSeconds, adhanAlert?.enabled, clockTick, isAdhanAlertEnabled, prayerSnapshot])
+  const activeDueMarker = useMemo(() => {
+    if (!duePrayer || !prayerSnapshot?.location.id) {
+      return null
+    }
+
+    return `${prayerSnapshot.location.id}:${duePrayer.date}:${duePrayer.prayer.name}`
+  }, [duePrayer, prayerSnapshot?.location.id])
 
   const setExternalPrayerSnapshot = useCallback((snapshot: PrayerTimesSnapshot | null) => {
     if (!snapshot) {
@@ -509,6 +517,31 @@ export function AdhanAlertProvider({ links, prayerConfig, prayerCache, children 
   }, [adhanAlert?.autoPlayWindowSeconds, adhanAlert?.enabled, clockTick, isAdhanAlertEnabled, prayerSnapshot])
 
   useEffect(() => {
+    if (!adhanAlert?.enabled || !prayerSnapshot || !duePrayer) {
+      return
+    }
+
+    const prayerStartMs = getPrayerTimestampMs(prayerSnapshot.location.timezone, duePrayer.date, duePrayer.prayer.time24)
+    if (prayerStartMs == null) {
+      return
+    }
+
+    const windowEndMs = prayerStartMs + adhanAlert.autoPlayWindowSeconds * 1_000
+    const delayMs = windowEndMs - Date.now() + 250
+    if (delayMs <= 0) {
+      return
+    }
+
+    const timeout = window.setTimeout(() => {
+      setClockTick((value) => value + 1)
+    }, delayMs)
+
+    return () => {
+      window.clearTimeout(timeout)
+    }
+  }, [adhanAlert?.autoPlayWindowSeconds, adhanAlert?.enabled, duePrayer, prayerSnapshot])
+
+  useEffect(() => {
     const audio = audioRef.current
     if (!audio) {
       return
@@ -539,8 +572,15 @@ export function AdhanAlertProvider({ links, prayerConfig, prayerCache, children 
       return
     }
 
-    const marker = `${prayerSnapshot?.location.id}:${duePrayer.date}:${duePrayer.prayer.name}`
-    if (typeof window !== 'undefined' && window.localStorage.getItem(ADHAN_ALERT_LAST_PLAYED_KEY) === marker) {
+    if (dismissedDueMarker && dismissedDueMarker === activeDueMarker) {
+      return
+    }
+
+    if (
+      typeof window !== 'undefined' &&
+      activeDueMarker &&
+      window.localStorage.getItem(ADHAN_ALERT_LAST_PLAYED_KEY) === activeDueMarker
+    ) {
       return
     }
 
@@ -550,15 +590,15 @@ export function AdhanAlertProvider({ links, prayerConfig, prayerCache, children 
     void audio
       .play()
       .then(() => {
-        if (typeof window !== 'undefined') {
-          window.localStorage.setItem(ADHAN_ALERT_LAST_PLAYED_KEY, marker)
+        if (typeof window !== 'undefined' && activeDueMarker) {
+          window.localStorage.setItem(ADHAN_ALERT_LAST_PLAYED_KEY, activeDueMarker)
         }
         setStatusMessage(`Adhan started for ${duePrayer.prayer.name}.`)
       })
       .catch(() => {
         setStatusMessage('Autoplay could not start. Browser autoplay rules or unsupported audio format may block it.')
       })
-  }, [adhanAlert?.enabled, duePrayer, isAdhanAlertEnabled, isMuted, prayerSnapshot?.location.id])
+  }, [activeDueMarker, adhanAlert?.enabled, dismissedDueMarker, duePrayer, isAdhanAlertEnabled, isMuted, prayerSnapshot?.location.id])
 
   const toggleAudioPlayback = useCallback(() => {
     const audio = audioRef.current
@@ -591,6 +631,18 @@ export function AdhanAlertProvider({ links, prayerConfig, prayerCache, children 
       return next
     })
   }, [])
+  const dismissCurrentAdhanMoment = useCallback(() => {
+    const audio = audioRef.current
+    if (audio) {
+      audio.pause()
+      audio.currentTime = 0
+    }
+
+    if (activeDueMarker) {
+      setDismissedDueMarker(activeDueMarker)
+    }
+    setStatusMessage('Adhan dismissed for this prayer.')
+  }, [activeDueMarker])
 
   const contextValue = useMemo<AdhanAlertContextValue>(
     () => ({
@@ -616,7 +668,10 @@ export function AdhanAlertProvider({ links, prayerConfig, prayerCache, children 
     ],
   )
 
-  const showMiniPlayer = Boolean(adhanAlert?.enabled) && routeLocation.pathname !== '/'
+  const showMiniPlayer =
+    Boolean(adhanAlert?.enabled) &&
+    routeLocation.pathname !== '/' &&
+    (isAudioPlaying || (Boolean(activeDueMarker) && dismissedDueMarker !== activeDueMarker))
 
   return (
     <AdhanAlertContext.Provider value={contextValue}>
@@ -631,14 +686,20 @@ export function AdhanAlertProvider({ links, prayerConfig, prayerCache, children 
               <Radio size={13} />
               {adhanAlert?.title ?? 'Adhan Alert'}
             </p>
-            <label className="tick-option">
-              <input
-                type="checkbox"
-                checked={isAdhanAlertEnabled}
-                onChange={(event) => setIsAdhanAlertEnabled(event.target.checked)}
-              />
-              <span>Alert on</span>
-            </label>
+            <div className="adhan-mini-top-actions">
+              <label className="tick-option">
+                <input
+                  type="checkbox"
+                  checked={isAdhanAlertEnabled}
+                  onChange={(event) => setIsAdhanAlertEnabled(event.target.checked)}
+                />
+                <span>Alert on</span>
+              </label>
+              <button type="button" className="icon-btn" onClick={dismissCurrentAdhanMoment} aria-label="Dismiss current adhan">
+                <X size={14} />
+                Close
+              </button>
+            </div>
           </header>
           <div className="adhan-mini-actions">
             <button type="button" className="icon-btn" onClick={toggleAudioPlayback}>
