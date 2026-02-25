@@ -1,23 +1,23 @@
-import { CalendarDays, Dumbbell, HeartPulse } from 'lucide-react'
+import { CalendarDays, HeartPulse, Rss } from "lucide-react";
 
-import type { BlogConfig } from '@/types/content'
+import type { BlogConfig } from "@/types/content";
 
 interface BlogPageProps {
-  blog: BlogConfig
+  blog: BlogConfig;
 }
 
 function formatDate(dateString: string): string {
-  const date = new Date(dateString)
+  const date = new Date(dateString);
 
   if (Number.isNaN(date.getTime())) {
-    return dateString
+    return dateString;
   }
 
-  return new Intl.DateTimeFormat('en-GB', {
-    day: '2-digit',
-    month: 'short',
-    year: 'numeric',
-  }).format(date)
+  return new Intl.DateTimeFormat("en-GB", {
+    day: "2-digit",
+    month: "short",
+    year: "numeric",
+  }).format(date);
 }
 
 export function BlogPage({ blog }: BlogPageProps) {
@@ -25,7 +25,7 @@ export function BlogPage({ blog }: BlogPageProps) {
     <main className="page-grid fitness-page">
       <section className="panel reveal fitness-hero">
         <p className="kicker">
-          <Dumbbell size={16} />
+          <Rss size={16} />
           {blog.kicker}
         </p>
         <h1>{blog.title}</h1>
@@ -48,7 +48,11 @@ export function BlogPage({ blog }: BlogPageProps) {
 
       <section className="fitness-post-list">
         {blog.posts.map((post) => (
-          <article key={post.id} id={post.id} className="panel reveal fitness-post">
+          <article
+            key={post.id}
+            id={post.id}
+            className="panel reveal fitness-post"
+          >
             <div className="fitness-post-visual">
               <img src={post.coverImage} alt={post.coverAlt} loading="lazy" />
             </div>
@@ -72,7 +76,10 @@ export function BlogPage({ blog }: BlogPageProps) {
               <p className="fitness-excerpt">{post.excerpt}</p>
 
               {post.html ? (
-                <div className="fitness-copy fitness-copy-html" dangerouslySetInnerHTML={{ __html: post.html }} />
+                <div
+                  className="fitness-copy fitness-copy-html"
+                  dangerouslySetInnerHTML={{ __html: post.html }}
+                />
               ) : (
                 <div className="fitness-copy">
                   {post.paragraphs.map((paragraph, index) => (
@@ -93,5 +100,5 @@ export function BlogPage({ blog }: BlogPageProps) {
         ))}
       </section>
     </main>
-  )
+  );
 }
