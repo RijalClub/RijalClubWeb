@@ -1,0 +1,151 @@
+name: Preview Deployment (GitHub Pages)
+
+# Trigger on every PR event so we can deploy, update, and clean up previews.
+# NOTE: Enable GitHub Pages in repo Settings → Pages → Source: "Deploy from a branch"
+#       Branch: gh-pages  /  Folder: / (root)
+# The preview URL will be:
+#   https://<owner>.github.io/<repo>/previews/pr-<number>/
+
+on:
+  pull_request:
+    types: [opened, synchronize, reopened, closed]
+
+# One deployment per PR at a time; cancel any in-progress run when a new push arrives.
+concurrency:
+  group: preview-${{ github.event.pull_request.number }}
+  cancel-in-progress: true
+
+jobs:
+  # ---------------------------------------------------------------------------
+  # Build and publish a preview for every open / updated PR
+  # ---------------------------------------------------------------------------
+  deploy-preview:
+    name: Deploy Preview
+    runs-on: ubuntu-latest
+    if: github.event.action != 'closed'
+
+    permissions:
+      contents: write       # push built files to gh-pages branch
+      pull-requests: write  # post / update comment on the PR
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+
+      - name: Install dependencies
+        run: npm ci
+
+      # Build with the correct public base path so all JS/CSS asset URLs resolve
+      # relative to the preview subdirectory on GitHub Pages.
+      - name: Build application
+        run: npm run build -- --base=/${{ github.event.repository.name }}/previews/pr-${{ github.event.pull_request.number }}/
+        env:
+          VITE_CONTENT_BASE_URL: ${{ secrets.VITE_CONTENT_BASE_URL || '/content' }}
+          VITE_EMAILJS_SERVICE_ID: ${{ secrets.VITE_EMAILJS_SERVICE_ID }}
+          VITE_EMAILJS_TEMPLATE_ID: ${{ secrets.VITE_EMAILJS_TEMPLATE_ID }}
+          VITE_EMAILJS_PUBLIC_KEY: ${{ secrets.VITE_EMAILJS_PUBLIC_KEY }}
+
+      # GitHub Pages is a static host — copy index.html to 404.html so that
+      # React Router deep-links still load the app after a page refresh.
+      - name: Add 404.html for SPA routing
+        run: cp dist/index.html dist/404.html
+
+      # Push dist/ into the gh-pages branch under previews/pr-<number>/.
+      # The action creates the branch on first use and only touches this folder.
+      - name: Deploy to GitHub Pages
+        uses: JamesIves/github-pages-deploy-action@v4
+        with:
+          branch: gh-pages
+          folder: dist
+          target-folder: previews/pr-${{ github.event.pull_request.number }}
+          clean: true   # remove stale files if the build output changed
+
+      - name: Find existing preview comment
+        id: find_comment
+        uses: peter-evans/find-comment@v3
+        with:
+          issue-number: ${{ github.event.pull_request.number }}
+          comment-author: github-actions[bot]
+          body-includes: '<!-- rijal-preview-comment -->'
+
+      - name: Create or update preview comment
+        uses: peter-evans/create-or-update-comment@v4
+        with:
+          comment-id: ${{ steps.find_comment.outputs.comment-id }}
+          issue-number: ${{ github.event.pull_request.number }}
+          edit-mode: replace
+          body: |
+            <!-- rijal-preview-comment -->
+            ## 🚀 Preview Deployment
+
+            | | |
+            |---|---|
+            | **Preview URL** | [https://${{ github.repository_owner }}.github.io/${{ github.event.repository.name }}/previews/pr-${{ github.event.pull_request.number }}/](https://${{ github.repository_owner }}.github.io/${{ github.event.repository.name }}/previews/pr-${{ github.event.pull_request.number }}/) |
+            | **Branch** | `${{ github.head_ref }}` |
+            | **Commit** | `${{ github.sha }}` |
+            | **Status** | ✅ Active |
+
+            > Powered by GitHub Pages. This preview is removed when the PR is merged or closed.
+
+  # ---------------------------------------------------------------------------
+  # Remove the preview subdirectory when the PR is merged or closed
+  # ---------------------------------------------------------------------------
+  close-preview:
+    name: Close Preview
+    runs-on: ubuntu-latest
+    if: github.event.action == 'closed'
+
+    permissions:
+      contents: write       # delete files from gh-pages branch
+      pull-requests: write  # update the existing PR comment
+
+    steps:
+      # Check out the gh-pages branch so we can surgically delete the preview folder.
+      - name: Checkout gh-pages branch
+        uses: actions/checkout@v4
+        with:
+          ref: gh-pages
+
+      - name: Remove preview directory
+        run: |
+          PR_DIR="previews/pr-${{ github.event.pull_request.number }}"
+          if [ -d "$PR_DIR" ]; then
+            git config user.name "github-actions[bot]"
+            git config user.email "github-actions[bot]@users.noreply.github.com"
+            git rm -rf "$PR_DIR"
+            git commit -m "chore: remove preview for PR #${{ github.event.pull_request.number }}"
+            git push
+          else
+            echo "Preview directory $PR_DIR not found — nothing to clean up."
+          fi
+
+      - name: Find existing preview comment
+        id: find_comment
+        uses: peter-evans/find-comment@v3
+        with:
+          issue-number: ${{ github.event.pull_request.number }}
+          comment-author: github-actions[bot]
+          body-includes: '<!-- rijal-preview-comment -->'
+
+      - name: Update comment to mark preview as closed
+        if: steps.find_comment.outputs.comment-id != ''
+        uses: peter-evans/create-or-update-comment@v4
+        with:
+          comment-id: ${{ steps.find_comment.outputs.comment-id }}
+          edit-mode: replace
+          body: |
+            <!-- rijal-preview-comment -->
+            ## Preview Deployment
+
+            | | |
+            |---|---|
+            | **Branch** | `${{ github.head_ref }}` |
+            | **Status** | 🔴 Closed |
+
+            > This preview was deactivated because the PR was ${{ github.event.pull_request.merged == true && 'merged' || 'closed' }}.
