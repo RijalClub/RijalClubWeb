@@ -5,6 +5,7 @@ This folder drives the site UI. Update these files and refresh the website:
 - `profile.json`
 - `links.json`
 - `announcements.json`
+- `blog.json`
 - `prayer.json`
 - `store.json`
 - `quran.json`
@@ -12,16 +13,29 @@ This folder drives the site UI. Update these files and refresh the website:
 - `contact.json`
 - `cache.json`
 
-## Announcements media
+## Announcements config
+
+- `announcements.homeFeed.accountUrl` sets the TikTok account to pull from.
+- `announcements.homeFeed.maxItems` controls how many cards appear on home.
+- `announcements.homeFeed.excludePinnedPosts` auto-detects and skips pinned posts (no fixed count hardcoding).
+- `announcements.homeFeed.proxyUrlTemplate` is used to fetch the TikTok embed profile HTML.
+  - Use `{url}` in the template and it will be replaced with encoded URL.
+- `announcements.homeFeed.oembedEndpoint` is used to enrich each video card.
+- `announcements.homeFeed.fallbackPosts` provides safe fallback cards when fetch fails.
+
+## Blog config
+
+- `blog.json` drives the full `/blog` page layout and content.
+
+## Media folders
 
 - Put local images in `assets/images`
 - Put local videos in `assets/videos`
 - Put local PDFs in `assets/pdfs`
-- Reference them like `/content/assets/images/your-file.png`
-- Optional gallery format:
-  - `announcements.items[].media` as an array of `{ "type": "image" | "video", "url": "...", "posterUrl"?: "...", "alt"?: "..." }`
-  - `store.products[].media` supports the same format
-- Card and modal media are optimized for `16:9` uploads (for example `1600x900`)
+- Reference local files like `/content/assets/images/your-file.png`
+- Store product galleries:
+  - `store.products[].media` uses `{ "type": "image" | "video", "url": "...", "posterUrl"?: "...", "alt"?: "..." }`
+- Recommended card and modal media ratio: `16:9` (for example `1600x900`)
 
 ## Links panel config
 

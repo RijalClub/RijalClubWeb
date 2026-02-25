@@ -2,8 +2,8 @@ import { useEffect, useState } from 'react'
 import { BrowserRouter, Navigate, Route, Routes } from 'react-router-dom'
 
 import { SiteShell } from '@/components/SiteShell'
+import { BlogPage } from '@/pages/BlogPage'
 import { loadSiteContent, type SiteContent } from '@/lib/content'
-import { AnnouncementsPage } from '@/pages/AnnouncementsPage'
 import { ContactPage } from '@/pages/ContactPage'
 import { HomePage } from '@/pages/HomePage'
 import { LibraryPage } from '@/pages/LibraryPage'
@@ -70,13 +70,17 @@ export default function App() {
 
   return (
     <BrowserRouter>
-      <SiteShell profile={content.profile}>
+      <SiteShell profile={content.profile} showStore={content.store.isOpen}>
         <Routes>
           <Route path="/" element={<HomePage content={content} />} />
-          <Route path="/announcements" element={<AnnouncementsPage announcements={content.announcements} />} />
+          <Route path="/blog" element={<BlogPage blog={content.blog} />} />
+          <Route path="/announcements" element={<Navigate to="/blog" replace />} />
           <Route path="/quran" element={<QuranPage config={content.quran} cache={content.cache.quran} />} />
           <Route path="/library" element={<LibraryPage config={content.hadith} />} />
-          <Route path="/store" element={<StorePage store={content.store} profile={content.profile} />} />
+          <Route
+            path="/store"
+            element={content.store.isOpen ? <StorePage store={content.store} profile={content.profile} /> : <Navigate to="/" replace />}
+          />
           <Route path="/contact" element={<ContactPage config={content.contact} />} />
           <Route path="*" element={<Navigate to="/" replace />} />
         </Routes>

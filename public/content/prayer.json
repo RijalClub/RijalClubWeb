@@ -15,8 +15,14 @@
     { "startsWith": "Asia/Kolkata", "locationId": "india-karachi" },
     { "startsWith": "Asia/Dhaka", "locationId": "india-karachi" },
     { "startsWith": "Asia/Jakarta", "locationId": "southeast-asia-singapore" },
-    { "startsWith": "Asia/Kuala_Lumpur", "locationId": "southeast-asia-singapore" },
-    { "startsWith": "Asia/Singapore", "locationId": "southeast-asia-singapore" },
+    {
+      "startsWith": "Asia/Kuala_Lumpur",
+      "locationId": "southeast-asia-singapore"
+    },
+    {
+      "startsWith": "Asia/Singapore",
+      "locationId": "southeast-asia-singapore"
+    },
     { "startsWith": "Asia/Tehran", "locationId": "iran-tehran" },
     { "startsWith": "Africa/Cairo", "locationId": "africa-egypt" },
     { "startsWith": "Africa/", "locationId": "africa-mwl" },
@@ -37,7 +43,7 @@
       "latitude": 51.5236,
       "longitude": -0.1543,
       "provider": "london_unified_7d",
-      "officialSourceLabel": "London unified 7-day timetable (GitHub Raw)",
+      "officialSourceLabel": "London unified 7-day timetable",
       "officialSourceUrl": "https://raw.githubusercontent.com/nasimali/london-prayer-times-unified-auto/release/london-prayer-times/data/london-prayer-times-7d.json"
     },
     {
@@ -49,7 +55,7 @@
       "latitude": 52.4862,
       "longitude": -1.8904,
       "provider": "adhan",
-      "officialSourceLabel": "Adhan JS · Moonsighting Committee",
+      "officialSourceLabel": "Moonsighting Committee",
       "officialSourceUrl": "https://github.com/batoulapps/adhan-js/blob/master/METHODS.md",
       "adhanMethod": "MoonsightingCommittee",
       "adhanMadhab": "shafi",
@@ -64,7 +70,7 @@
       "latitude": 50.8503,
       "longitude": 4.3517,
       "provider": "adhan",
-      "officialSourceLabel": "Adhan JS · Muslim World League",
+      "officialSourceLabel": "Muslim World League",
       "officialSourceUrl": "https://github.com/batoulapps/adhan-js/blob/master/METHODS.md",
       "adhanMethod": "MuslimWorldLeague",
       "adhanMadhab": "shafi",
@@ -79,7 +85,7 @@
       "latitude": 40.7128,
       "longitude": -74.006,
       "provider": "adhan",
-      "officialSourceLabel": "Adhan JS · Moonsighting Committee",
+      "officialSourceLabel": "Moonsighting Committee",
       "officialSourceUrl": "https://github.com/batoulapps/adhan-js/blob/master/METHODS.md",
       "adhanMethod": "MoonsightingCommittee",
       "adhanMadhab": "shafi",
@@ -94,7 +100,7 @@
       "latitude": 41.8781,
       "longitude": -87.6298,
       "provider": "adhan",
-      "officialSourceLabel": "Adhan JS · North America (ISNA)",
+      "officialSourceLabel": "North America (ISNA)",
       "officialSourceUrl": "https://github.com/batoulapps/adhan-js/blob/master/METHODS.md",
       "adhanMethod": "NorthAmerica",
       "adhanMadhab": "shafi",
@@ -109,7 +115,7 @@
       "latitude": 24.8607,
       "longitude": 67.0011,
       "provider": "adhan",
-      "officialSourceLabel": "Adhan JS · Karachi",
+      "officialSourceLabel": "Karachi",
       "officialSourceUrl": "https://github.com/batoulapps/adhan-js/blob/master/METHODS.md",
       "adhanMethod": "Karachi",
       "adhanMadhab": "hanafi"
@@ -123,7 +129,7 @@
       "latitude": 28.6139,
       "longitude": 77.209,
       "provider": "adhan",
-      "officialSourceLabel": "Adhan JS · Karachi",
+      "officialSourceLabel": "Karachi",
       "officialSourceUrl": "https://github.com/batoulapps/adhan-js/blob/master/METHODS.md",
       "adhanMethod": "Karachi",
       "adhanMadhab": "hanafi"
@@ -137,7 +143,7 @@
       "latitude": 21.3891,
       "longitude": 39.8579,
       "provider": "adhan",
-      "officialSourceLabel": "Adhan JS · Umm al-Qura",
+      "officialSourceLabel": "Umm al-Qura",
       "officialSourceUrl": "https://github.com/batoulapps/adhan-js/blob/master/METHODS.md",
       "adhanMethod": "UmmAlQura",
       "adhanMadhab": "shafi"
@@ -151,7 +157,7 @@
       "latitude": 25.2048,
       "longitude": 55.2708,
       "provider": "adhan",
-      "officialSourceLabel": "Adhan JS · Dubai",
+      "officialSourceLabel": "Dubai",
       "officialSourceUrl": "https://github.com/batoulapps/adhan-js/blob/master/METHODS.md",
       "adhanMethod": "Dubai",
       "adhanMadhab": "shafi"
@@ -165,7 +171,7 @@
       "latitude": 25.2854,
       "longitude": 51.531,
       "provider": "adhan",
-      "officialSourceLabel": "Adhan JS · Qatar",
+      "officialSourceLabel": "Qatar",
       "officialSourceUrl": "https://github.com/batoulapps/adhan-js/blob/master/METHODS.md",
       "adhanMethod": "Qatar",
       "adhanMadhab": "shafi"
@@ -179,7 +185,7 @@
       "latitude": 29.3759,
       "longitude": 47.9774,
       "provider": "adhan",
-      "officialSourceLabel": "Adhan JS · Kuwait",
+      "officialSourceLabel": "Kuwait",
       "officialSourceUrl": "https://github.com/batoulapps/adhan-js/blob/master/METHODS.md",
       "adhanMethod": "Kuwait",
       "adhanMadhab": "shafi"
@@ -193,7 +199,7 @@
       "latitude": 3.139,
       "longitude": 101.6869,
       "provider": "adhan",
-      "officialSourceLabel": "Adhan JS · Singapore",
+      "officialSourceLabel": "Singapore",
       "officialSourceUrl": "https://github.com/batoulapps/adhan-js/blob/master/METHODS.md",
       "adhanMethod": "Singapore",
       "adhanMadhab": "shafi"
@@ -207,7 +213,7 @@
       "latitude": 30.0444,
       "longitude": 31.2357,
       "provider": "adhan",
-      "officialSourceLabel": "Adhan JS · Egyptian",
+      "officialSourceLabel": "Egyptian",
       "officialSourceUrl": "https://github.com/batoulapps/adhan-js/blob/master/METHODS.md",
       "adhanMethod": "Egyptian",
       "adhanMadhab": "shafi"
@@ -221,7 +227,7 @@
       "latitude": -1.2921,
       "longitude": 36.8219,
       "provider": "adhan",
-      "officialSourceLabel": "Adhan JS · Muslim World League",
+      "officialSourceLabel": "Muslim World League",
       "officialSourceUrl": "https://github.com/batoulapps/adhan-js/blob/master/METHODS.md",
       "adhanMethod": "MuslimWorldLeague",
       "adhanMadhab": "shafi"
@@ -235,7 +241,7 @@
       "latitude": 41.0082,
       "longitude": 28.9784,
       "provider": "adhan",
-      "officialSourceLabel": "Adhan JS · Turkey",
+      "officialSourceLabel": "Turkey",
       "officialSourceUrl": "https://github.com/batoulapps/adhan-js/blob/master/METHODS.md",
       "adhanMethod": "Turkey",
       "adhanMadhab": "hanafi"
@@ -249,7 +255,7 @@
       "latitude": 35.6892,
       "longitude": 51.389,
       "provider": "adhan",
-      "officialSourceLabel": "Adhan JS · Tehran",
+      "officialSourceLabel": "Tehran",
       "officialSourceUrl": "https://github.com/batoulapps/adhan-js/blob/master/METHODS.md",
       "adhanMethod": "Tehran",
       "adhanMadhab": "shafi"
@@ -263,7 +269,7 @@
       "latitude": -33.8688,
       "longitude": 151.2093,
       "provider": "adhan",
-      "officialSourceLabel": "Adhan JS · Muslim World League",
+      "officialSourceLabel": "Muslim World League",
       "officialSourceUrl": "https://github.com/batoulapps/adhan-js/blob/master/METHODS.md",
       "adhanMethod": "MuslimWorldLeague",
       "adhanMadhab": "shafi"
@@ -277,7 +283,7 @@
       "latitude": 21.3891,
       "longitude": 39.8579,
       "provider": "adhan",
-      "officialSourceLabel": "Adhan JS · Muslim World League",
+      "officialSourceLabel": "Muslim World League",
       "officialSourceUrl": "https://github.com/batoulapps/adhan-js/blob/master/METHODS.md",
       "adhanMethod": "MuslimWorldLeague",
       "adhanMadhab": "shafi"

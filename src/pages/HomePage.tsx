@@ -1,9 +1,9 @@
 import { useState } from 'react'
 
-import { AnnouncementsSection } from '@/components/AnnouncementsSection'
 import { HeroSection } from '@/components/HeroSection'
 import { PrayerTimesWidget } from '@/components/PrayerTimesWidget'
 import { QuickLinksSection } from '@/components/QuickLinksSection'
+import { TikTokAnnouncementsSection } from '@/components/TikTokAnnouncementsSection'
 import type { PrayerTimeline, PrayerTimesSnapshot } from '@/lib/prayer'
 import { StorePreview } from '@/components/StorePreview'
 import type { SiteContent } from '@/lib/content'
@@ -32,8 +32,8 @@ export function HomePage({ content }: HomePageProps) {
         <QuickLinksSection links={content.links} prayerSnapshot={prayerSnapshot} prayerTimeline={prayerTimeline} />
       </div>
 
-      <AnnouncementsSection announcements={content.announcements} maxItems={3} headingLink="/announcements" />
-      <StorePreview store={content.store} />
+      <TikTokAnnouncementsSection announcements={content.announcements} headingLink="/blog" />
+      {content.store.isOpen ? <StorePreview store={content.store} /> : null}
     </main>
   )
 }

@@ -2,6 +2,7 @@ import { z } from 'zod'
 
 import type {
   AnnouncementsConfig,
+  BlogConfig,
   CacheConfig,
   ContactConfig,
   HadithConfig,
@@ -113,31 +114,70 @@ const linksSchema = z.object({
     .optional(),
 })
 
+const announcementItemSchema = z.object({
+  id: z.string().min(1),
+  type: z.enum(['text', 'image', 'video']),
+  title: z.string().min(1),
+  body: z.string().min(1),
+  publishedAt: z.string().min(1),
+  mediaUrl: z.string().min(1).optional(),
+  posterUrl: z.string().min(1).optional(),
+  media: z
+    .array(
+      z.object({
+        type: z.enum(['image', 'video']),
+        url: urlOrAbsolutePathSchema,
+        posterUrl: urlOrAbsolutePathSchema.optional(),
+        alt: z.string().min(1).optional(),
+      }),
+    )
+    .optional(),
+  ctaLabel: z.string().min(1).optional(),
+  ctaUrl: z.string().url().optional(),
+})
+
 const announcementsSchema = z.object({
   heading: z.string().min(1),
   description: z.string().min(1),
-  items: z
+  homeFeed: z.object({
+    accountUrl: z.string().url(),
+    maxItems: z.number().int().min(1).max(12),
+    excludePinnedPosts: z.boolean().optional(),
+    oembedEndpoint: z.string().url(),
+    embedProfileUrl: z.string().url().optional(),
+    proxyUrlTemplate: z.string().min(1).optional(),
+    cacheMinutes: z.number().positive().max(1440),
+    fallbackPosts: z
+      .array(
+        z.object({
+          id: z.string().min(1),
+          url: z.string().url(),
+          title: z.string().min(1).optional(),
+          description: z.string().min(1).optional(),
+          thumbnailUrl: urlOrAbsolutePathSchema.optional(),
+        }),
+      )
+      .optional(),
+  }),
+  items: z.array(announcementItemSchema).optional(),
+})
+
+const blogSchema = z.object({
+  kicker: z.string().min(1),
+  title: z.string().min(1),
+  description: z.string().min(1),
+  posts: z
     .array(
       z.object({
         id: z.string().min(1),
-        type: z.enum(['text', 'image', 'video']),
         title: z.string().min(1),
-        body: z.string().min(1),
         publishedAt: z.string().min(1),
-        mediaUrl: z.string().min(1).optional(),
-        posterUrl: z.string().min(1).optional(),
-        media: z
-          .array(
-            z.object({
-              type: z.enum(['image', 'video']),
-              url: urlOrAbsolutePathSchema,
-              posterUrl: urlOrAbsolutePathSchema.optional(),
-              alt: z.string().min(1).optional(),
-            }),
-          )
-          .optional(),
-        ctaLabel: z.string().min(1).optional(),
-        ctaUrl: z.string().url().optional(),
+        coverImage: urlOrAbsolutePathSchema,
+        coverAlt: z.string().min(1),
+        excerpt: z.string().min(1),
+        tags: z.array(z.string().min(1)).min(1),
+        paragraphs: z.array(z.string().min(1)).min(1),
+        checklist: z.array(z.string().min(1)).optional(),
       }),
     )
     .min(1),
@@ -348,6 +388,7 @@ export interface SiteContent {
   profile: ProfileConfig
   links: LinksConfig
   announcements: AnnouncementsConfig
+  blog: BlogConfig
   prayer: PrayerConfig
   store: StoreConfig
   quran: QuranConfig
@@ -357,10 +398,11 @@ export interface SiteContent {
 }
 
 export async function loadSiteContent(): Promise<SiteContent> {
-  const [profile, links, announcements, prayer, store, quran, hadith, contact, cache] = await Promise.all([
+  const [profile, links, announcements, blog, prayer, store, quran, hadith, contact, cache] = await Promise.all([
     fetchConfig('profile.json', profileSchema),
     fetchConfig('links.json', linksSchema),
     fetchConfig('announcements.json', announcementsSchema),
+    fetchConfig('blog.json', blogSchema),
     fetchConfig('prayer.json', prayerSchema),
     fetchConfig('store.json', storeSchema),
     fetchConfig('quran.json', quranSchema),
@@ -373,6 +415,7 @@ export async function loadSiteContent(): Promise<SiteContent> {
     profile,
     links,
     announcements,
+    blog,
     prayer,
     store,
     quran,

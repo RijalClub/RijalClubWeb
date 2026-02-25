@@ -5,10 +5,11 @@ import type { ProfileConfig } from '@/types/content'
 
 interface SiteShellProps {
   profile: ProfileConfig
+  showStore: boolean
   children: ReactNode
 }
 
-export function SiteShell({ profile, children }: SiteShellProps) {
+export function SiteShell({ profile, showStore, children }: SiteShellProps) {
   const currentYear = new Date().getFullYear()
 
   return (
@@ -37,10 +38,10 @@ export function SiteShell({ profile, children }: SiteShellProps) {
             Home
           </NavLink>
           <NavLink
-            to="/announcements"
+            to="/blog"
             className={({ isActive }) => (isActive ? 'active' : undefined)}
           >
-            Announcements
+            Blog
           </NavLink>
           <NavLink
             to="/quran"
@@ -54,12 +55,14 @@ export function SiteShell({ profile, children }: SiteShellProps) {
           >
             Library
           </NavLink>
-          <NavLink
-            to="/store"
-            className={({ isActive }) => (isActive ? 'active' : undefined)}
-          >
-            Store
-          </NavLink>
+          {showStore ? (
+            <NavLink
+              to="/store"
+              className={({ isActive }) => (isActive ? 'active' : undefined)}
+            >
+              Store
+            </NavLink>
+          ) : null}
           <NavLink
             to="/contact"
             className={({ isActive }) => (isActive ? 'active' : undefined)}

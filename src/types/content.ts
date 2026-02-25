@@ -104,10 +104,49 @@ export interface AnnouncementItem {
   ctaUrl?: string
 }
 
+export interface TikTokFallbackPost {
+  id: string
+  url: string
+  title?: string
+  description?: string
+  thumbnailUrl?: string
+}
+
+export interface TikTokHomeFeedConfig {
+  accountUrl: string
+  maxItems: number
+  excludePinnedPosts?: boolean
+  oembedEndpoint: string
+  embedProfileUrl?: string
+  proxyUrlTemplate?: string
+  cacheMinutes: number
+  fallbackPosts?: TikTokFallbackPost[]
+}
+
+export interface BlogPost {
+  id: string
+  title: string
+  publishedAt: string
+  coverImage: string
+  coverAlt: string
+  excerpt: string
+  tags: string[]
+  paragraphs: string[]
+  checklist?: string[]
+}
+
+export interface BlogConfig {
+  kicker: string
+  title: string
+  description: string
+  posts: BlogPost[]
+}
+
 export interface AnnouncementsConfig {
   heading: string
   description: string
-  items: AnnouncementItem[]
+  homeFeed: TikTokHomeFeedConfig
+  items?: AnnouncementItem[]
 }
 
 export type PrayerProvider = 'iccuk_html' | 'london_unified_7d' | 'adhan'

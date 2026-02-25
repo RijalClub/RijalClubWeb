@@ -258,7 +258,7 @@ export function AnnouncementDetailModal({ item, onClose }: AnnouncementDetailMod
 
 export function AnnouncementsSection({ announcements, maxItems = 3, headingLink }: AnnouncementsSectionProps) {
   const [activeItem, setActiveItem] = useState<AnnouncementItem | null>(null)
-  const items = sortAnnouncements(announcements.items).slice(0, Math.max(1, maxItems))
+  const items = sortAnnouncements(announcements.items ?? []).slice(0, Math.max(1, maxItems))
 
   return (
     <>
@@ -276,11 +276,15 @@ export function AnnouncementsSection({ announcements, maxItems = 3, headingLink 
           <p>{announcements.description}</p>
         </div>
 
-        <div className="announcement-grid">
-          {items.map((item) => (
-            <AnnouncementCard key={item.id} item={item} onOpen={setActiveItem} />
-          ))}
-        </div>
+        {items.length > 0 ? (
+          <div className="announcement-grid">
+            {items.map((item) => (
+              <AnnouncementCard key={item.id} item={item} onOpen={setActiveItem} />
+            ))}
+          </div>
+        ) : (
+          <p className="state-text">No configured announcement cards.</p>
+        )}
       </section>
 
       <AnnouncementDetailModal item={activeItem} onClose={() => setActiveItem(null)} />

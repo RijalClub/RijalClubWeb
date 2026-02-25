@@ -1,0 +1,51 @@
+{
+  "kicker": "Fitness",
+  "title": "Rijal Club Fitness Blog",
+  "description": "Faith, discipline, and physical wellbeing in one routine. These posts are fully content-driven from JSON so you can expand this section anytime.",
+  "posts": [
+    {
+      "id": "why-fitness-matters",
+      "title": "Why Fitness Matters For a Muslim",
+      "publishedAt": "2026-02-25",
+      "coverImage": "/content/assets/images/fitness-post-importance.svg",
+      "coverAlt": "Fitness and discipline themed visual",
+      "excerpt": "Strength is not vanity. It supports worship, consistency, service, and emotional resilience.",
+      "tags": ["Mindset", "Deen", "Health"],
+      "paragraphs": [
+        "Caring for your body is part of amanah. Better energy improves salah focus, learning, family responsibility, and community service.",
+        "The Prophet (peace be upon him) encouraged strength and beneficial living. Physical health supports disciplined worship and protects from burnout.",
+        "Fitness also builds sabr: turning up consistently, controlling desires, and doing hard things with sincerity. That mindset carries directly into deen and character.",
+        "Start simple: a realistic weekly routine, clean sleep, better hydration, and regular movement. Small habits done regularly are better than intense plans that collapse."
+      ],
+      "checklist": [
+        "Set 3 realistic training days each week.",
+        "Keep one walk daily after prayer or meals.",
+        "Hydrate and avoid over-processed snacks.",
+        "Track consistency, not perfection."
+      ]
+    },
+    {
+      "id": "home-calisthenics-start",
+      "title": "Easy Home Calisthenics Plan",
+      "publishedAt": "2026-02-25",
+      "coverImage": "/content/assets/images/fitness-post-calisthenics.svg",
+      "coverAlt": "Home calisthenics training themed visual",
+      "excerpt": "No gym needed. Use this beginner-friendly structure to build strength at home in 20-30 minutes.",
+      "tags": ["Beginner", "Calisthenics", "Home"],
+      "paragraphs": [
+        "Warm-up first: 3 minutes brisk marching, arm circles, and bodyweight squats. Keep movements controlled and pain-free.",
+        "Run this circuit for 3 rounds with 60-90 seconds rest between rounds. Stop one or two reps before failure to keep form clean.",
+        "Progress slowly each week by adding 1-2 reps, or one extra round only when your recovery is good.",
+        "Pair this with a 20-minute walk on non-training days and consistent sleep for better results."
+      ],
+      "checklist": [
+        "Push-ups: 8-12 reps (or knee push-ups).",
+        "Bodyweight squats: 12-20 reps.",
+        "Chair dips: 8-12 reps.",
+        "Plank: 30-45 seconds.",
+        "Glute bridge: 12-20 reps.",
+        "Optional finisher: 5-8 burpees."
+      ]
+    }
+  ]
+}
