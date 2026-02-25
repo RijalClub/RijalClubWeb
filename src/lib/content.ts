@@ -14,7 +14,9 @@ import type {
 } from '@/types/content'
 
 const rawContentBaseUrl = import.meta.env.VITE_CONTENT_BASE_URL
-const contentBaseUrl = (rawContentBaseUrl?.trim().replace(/^['"]|['"]$/g, '') || '/content').replace(/\/+$/, '')
+const contentBaseUrl = (rawContentBaseUrl?.trim().replace(/^['"]|['"]$/g, '') || '/api/content').replace(/\/+$/, '')
+const rawContentBasePublicKey = import.meta.env.VITE_CONTENT_BASE_PUBLIC_KEY
+const contentBasePublicKey = rawContentBasePublicKey?.trim().replace(/^['"]|['"]$/g, '') || ''
 
 function contentFileUrl(fileName: string): string {
   return `${contentBaseUrl}/${fileName.replace(/^\/+/, '')}`
@@ -356,7 +358,10 @@ async function fetchConfig<T>(fileName: string, schema: z.ZodSchema<T>): Promise
   if (!configCache.has(fileUrl)) {
     configCache.set(
       fileUrl,
-      fetch(fileUrl, { cache: 'no-cache' })
+      fetch(fileUrl, {
+        cache: 'no-cache',
+        headers: contentBasePublicKey ? { 'x-content-public-key': contentBasePublicKey } : undefined,
+      })
         .then(async (response) => {
           if (!response.ok) {
             throw new Error(`Failed loading ${fileName}: ${response.status} ${response.statusText}`)
