@@ -40,6 +40,20 @@ export function LibraryPage({ config }: LibraryPageProps) {
     () => config.collections.find((collection) => collection.id === collectionId) ?? defaultCollection,
     [collectionId, config.collections, defaultCollection],
   )
+  const selectCollection = (collection: HadithCollectionConfig): void => {
+    setCollectionId(collection.id)
+
+    if (!isCompactScreen) {
+      return
+    }
+
+    if (collection.pdfUrl) {
+      setIsPdfModalOpen(true)
+      return
+    }
+
+    setIsPdfModalOpen(false)
+  }
 
   useEffect(() => {
     if (typeof window === 'undefined') {
@@ -108,7 +122,11 @@ export function LibraryPage({ config }: LibraryPageProps) {
       <section className="panel reveal library-collections-panel">
         <div className="section-heading">
           <h2>Sunni Collections</h2>
-          <p>Pick a collection to open its embedded PDF.</p>
+          <p>
+            {isCompactScreen
+              ? 'Tap a collection cover to open the fullscreen PDF reader.'
+              : 'Pick a collection to open its embedded PDF.'}
+          </p>
         </div>
         <div className="library-collection-grid">
           {config.collections.map((collection) => (
@@ -116,7 +134,7 @@ export function LibraryPage({ config }: LibraryPageProps) {
               key={collection.id}
               type="button"
               className={collection.id === selectedCollection.id ? 'library-collection active' : 'library-collection'}
-              onClick={() => setCollectionId(collection.id)}
+              onClick={() => selectCollection(collection)}
             >
               {collection.coverImage ? (
                 <img src={collection.coverImage} alt={`${collection.title} cover`} loading="lazy" />
@@ -136,7 +154,26 @@ export function LibraryPage({ config }: LibraryPageProps) {
       </section>
 
       <section className="panel reveal library-reader-panel">
-        {selectedCollection.pdfUrl ? (
+        {isCompactScreen ? (
+          <article className="library-pdf-card">
+            <header className="library-pdf-header">
+              <p className="kicker">
+                <FileText size={14} />
+                Mobile/Tablet Reader
+              </p>
+              {selectedCollection.pdfUrl ? (
+                <div className="library-link-row">
+                  <a href={selectedCollection.pdfUrl} target="_blank" rel="noopener noreferrer" className="inline-link">
+                    Open {selectedCollection.title} in new tab
+                    <SquareArrowOutUpRight size={12} />
+                  </a>
+                </div>
+              ) : null}
+            </header>
+            <p className="source-note">Tap a collection cover above to open the fullscreen reader.</p>
+            {!selectedCollection.pdfUrl ? <p className="state-text">PDF not available for this collection yet.</p> : null}
+          </article>
+        ) : selectedCollection.pdfUrl ? (
           <article className="library-pdf-card">
             <header className="library-pdf-header">
               <p className="kicker">
@@ -144,27 +181,18 @@ export function LibraryPage({ config }: LibraryPageProps) {
                 {selectedCollection.title} PDF
               </p>
               <div className="library-link-row">
-                {isCompactScreen ? (
-                  <button type="button" className="btn btn-solid" onClick={() => setIsPdfModalOpen(true)}>
-                    Open fullscreen reader
-                  </button>
-                ) : null}
                 <a href={selectedCollection.pdfUrl} target="_blank" rel="noopener noreferrer" className="inline-link">
                   Open in new tab
                   <SquareArrowOutUpRight size={12} />
                 </a>
               </div>
             </header>
-            {isCompactScreen ? (
-              <p className="source-note">Use the fullscreen reader for a better mobile/tablet PDF experience.</p>
-            ) : (
-              <iframe
-                src={selectedCollection.pdfUrl}
-                title={`${selectedCollection.title} PDF`}
-                loading="lazy"
-                referrerPolicy="no-referrer"
-              />
-            )}
+            <iframe
+              src={selectedCollection.pdfUrl}
+              title={`${selectedCollection.title} PDF`}
+              loading="lazy"
+              referrerPolicy="no-referrer"
+            />
           </article>
         ) : (
           <article className="library-pdf-card">
