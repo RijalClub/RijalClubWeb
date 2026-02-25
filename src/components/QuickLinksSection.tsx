@@ -13,14 +13,14 @@ import {
   Radio,
   Youtube,
 } from 'lucide-react'
-import { useEffect, useMemo, useRef, useState } from 'react'
+import { useMemo } from 'react'
 
-import { formatCountdown, formatPrayerClock, type PrayerTimeline, type PrayerTimesSnapshot } from '@/lib/prayer'
+import { formatCountdown, formatPrayerClock, type PrayerTimeline } from '@/lib/prayer'
 import type { LinksConfig, ResourceSectionIcon } from '@/types/content'
+import { useAdhanAlert } from '@/components/AdhanAlertProvider'
 
 interface QuickLinksSectionProps {
   links: LinksConfig
-  prayerSnapshot: PrayerTimesSnapshot | null
   prayerTimeline: PrayerTimeline | null
 }
 
@@ -44,210 +44,16 @@ const resourceSectionIconMap: Record<ResourceSectionIcon, typeof BookOpen> = {
   link: LinkIcon,
 }
 
-const ADHAN_ALERT_ENABLED_KEY = 'rijal:adhan-alert:enabled'
-const ADHAN_ALERT_LAST_PLAYED_KEY = 'rijal:adhan-alert:last-played'
-const PRAYER_CLOCK_24_KEY = 'rijal:prayer:clock24'
-
-function getDateKeyInTimezone(timezone: string, now: Date): string {
-  const parts = new Intl.DateTimeFormat('en-CA', {
-    year: 'numeric',
-    month: '2-digit',
-    day: '2-digit',
-    timeZone: timezone,
-  }).formatToParts(now)
-
-  const year = parts.find((part) => part.type === 'year')?.value ?? '1970'
-  const month = parts.find((part) => part.type === 'month')?.value ?? '01'
-  const day = parts.find((part) => part.type === 'day')?.value ?? '01'
-
-  return `${year}-${month}-${day}`
-}
-
-function getNowSecondsInTimezone(timezone: string, now: Date): number {
-  const parts = new Intl.DateTimeFormat('en-GB', {
-    hour: '2-digit',
-    minute: '2-digit',
-    second: '2-digit',
-    hour12: false,
-    timeZone: timezone,
-  }).formatToParts(now)
-
-  const hours = Number.parseInt(parts.find((part) => part.type === 'hour')?.value ?? '0', 10)
-  const minutes = Number.parseInt(parts.find((part) => part.type === 'minute')?.value ?? '0', 10)
-  const seconds = Number.parseInt(parts.find((part) => part.type === 'second')?.value ?? '0', 10)
-
-  return hours * 3600 + minutes * 60 + seconds
-}
-
-function parsePrayerSeconds(time24: string): number {
-  const [hoursRaw, minutesRaw] = time24.split(':')
-  const hours = Number.parseInt(hoursRaw, 10)
-  const minutes = Number.parseInt(minutesRaw, 10)
-
-  return (Number.isNaN(hours) ? 0 : hours) * 3600 + (Number.isNaN(minutes) ? 0 : minutes) * 60
-}
-
-function findDuePrayer(snapshot: PrayerTimesSnapshot, windowSeconds: number, now = new Date()) {
-  const todayKey = getDateKeyInTimezone(snapshot.location.timezone, now)
-  const todaySchedule = snapshot.weekSchedule?.find((day) => day.date === todayKey)
-  if (!todaySchedule) {
-    return null
-  }
-
-  const nowSeconds = getNowSecondsInTimezone(snapshot.location.timezone, now)
-  const due = todaySchedule.prayers.find((prayer) => {
-    const delta = nowSeconds - parsePrayerSeconds(prayer.time24)
-    return delta >= 0 && delta <= windowSeconds
-  })
-
-  if (!due) {
-    return null
-  }
-
-  return {
-    date: todaySchedule.date,
-    prayer: due,
-  }
-}
-
-function parseTimezoneOffsetMinutes(value: string): number | null {
-  if (value === 'GMT' || value === 'UTC') {
-    return 0
-  }
-
-  const match = value.match(/^GMT([+-])(\d{1,2})(?::?(\d{2}))?$/)
-  if (!match) {
-    return null
-  }
-
-  const sign = match[1] === '-' ? -1 : 1
-  const hours = Number.parseInt(match[2], 10)
-  const minutes = Number.parseInt(match[3] ?? '0', 10)
-  if (Number.isNaN(hours) || Number.isNaN(minutes)) {
-    return null
-  }
-
-  return sign * (hours * 60 + minutes)
-}
-
-function getTimezoneOffsetMinutes(timezone: string, instant: Date): number | null {
-  const parts = new Intl.DateTimeFormat('en-US', {
-    hour: '2-digit',
-    minute: '2-digit',
-    hour12: false,
-    timeZone: timezone,
-    timeZoneName: 'shortOffset',
-  }).formatToParts(instant)
-
-  const zoneName = parts.find((part) => part.type === 'timeZoneName')?.value
-  if (!zoneName) {
-    return null
-  }
-
-  return parseTimezoneOffsetMinutes(zoneName)
-}
-
-function getPrayerTimestampMs(timezone: string, dateKey: string, time24: string): number | null {
-  const [yearRaw, monthRaw, dayRaw] = dateKey.split('-')
-  const [hoursRaw, minutesRaw] = time24.split(':')
-  const year = Number.parseInt(yearRaw ?? '', 10)
-  const month = Number.parseInt(monthRaw ?? '', 10)
-  const day = Number.parseInt(dayRaw ?? '', 10)
-  const hours = Number.parseInt(hoursRaw ?? '', 10)
-  const minutes = Number.parseInt(minutesRaw ?? '', 10)
-
-  if (
-    Number.isNaN(year) ||
-    Number.isNaN(month) ||
-    Number.isNaN(day) ||
-    Number.isNaN(hours) ||
-    Number.isNaN(minutes)
-  ) {
-    return null
-  }
-
-  const naiveUtcMs = Date.UTC(year, month - 1, day, hours, minutes, 0, 0)
-  let resolvedMs = naiveUtcMs
-
-  // Resolve timezone offsets safely across DST boundaries.
-  for (let attempt = 0; attempt < 2; attempt += 1) {
-    const offsetMinutes = getTimezoneOffsetMinutes(timezone, new Date(resolvedMs))
-    if (offsetMinutes == null) {
-      return null
-    }
-
-    const adjustedMs = naiveUtcMs - offsetMinutes * 60_000
-    if (adjustedMs === resolvedMs) {
-      break
-    }
-
-    resolvedMs = adjustedMs
-  }
-
-  return resolvedMs
-}
-
-function findNextPrayerTrigger(snapshot: PrayerTimesSnapshot, now = new Date()) {
-  let next: { date: string; prayer: { name: string; time24: string }; delayMs: number } | null = null
-
-  for (const day of snapshot.weekSchedule ?? []) {
-    for (const prayer of day.prayers) {
-      const timestampMs = getPrayerTimestampMs(snapshot.location.timezone, day.date, prayer.time24)
-      if (timestampMs == null) {
-        continue
-      }
-
-      const delayMs = timestampMs - now.getTime()
-      if (delayMs < 0) {
-        continue
-      }
-
-      if (!next || delayMs < next.delayMs) {
-        next = {
-          date: day.date,
-          prayer: { name: prayer.name, time24: prayer.time24 },
-          delayMs,
-        }
-      }
-    }
-  }
-
-  return next
-}
-
-export function QuickLinksSection({ links, prayerSnapshot, prayerTimeline }: QuickLinksSectionProps) {
+export function QuickLinksSection({ links, prayerTimeline }: QuickLinksSectionProps) {
   const adhanAlert = links.adhanAlert
-  const [clockTick, setClockTick] = useState(0)
-  const [isAudioPlaying, setIsAudioPlaying] = useState(false)
-  const [statusMessage, setStatusMessage] = useState<string | null>(null)
-  const audioRef = useRef<HTMLAudioElement | null>(null)
-  const [use24HourClock, setUse24HourClock] = useState<boolean>(() => {
-    if (typeof window === 'undefined') {
-      return false
-    }
-
-    return window.localStorage.getItem(PRAYER_CLOCK_24_KEY) === 'true'
-  })
-  const [isAdhanAlertEnabled, setIsAdhanAlertEnabled] = useState<boolean>(() => {
-    if (typeof window === 'undefined') {
-      return adhanAlert?.enabled ?? true
-    }
-
-    const stored = window.localStorage.getItem(ADHAN_ALERT_ENABLED_KEY)
-    if (!stored) {
-      return adhanAlert?.enabled ?? true
-    }
-
-    return stored === 'true'
-  })
-
-  const duePrayer = useMemo(() => {
-    if (!adhanAlert?.enabled || !prayerSnapshot || !isAdhanAlertEnabled) {
-      return null
-    }
-
-    return findDuePrayer(prayerSnapshot, adhanAlert.autoPlayWindowSeconds)
-  }, [adhanAlert, clockTick, isAdhanAlertEnabled, prayerSnapshot])
+  const {
+    isAdhanAlertEnabled,
+    setIsAdhanAlertEnabled,
+    isAudioPlaying,
+    toggleAudioPlayback,
+    statusMessage,
+    use24HourClock,
+  } = useAdhanAlert()
 
   const groupedResources = useMemo(() => {
     const groups = new Map<string, NonNullable<LinksConfig['resources']>>()
@@ -262,157 +68,6 @@ export function QuickLinksSection({ links, prayerSnapshot, prayerTimeline }: Qui
 
     return groups
   }, [links.resourceSections, links.resources])
-
-  useEffect(() => {
-    if (typeof window === 'undefined') {
-      return
-    }
-
-    const syncClockPreference = (): void => {
-      setUse24HourClock(window.localStorage.getItem(PRAYER_CLOCK_24_KEY) === 'true')
-    }
-
-    const onVisibilityChange = (): void => {
-      if (document.visibilityState === 'visible') {
-        syncClockPreference()
-      }
-    }
-
-    syncClockPreference()
-    window.addEventListener('storage', syncClockPreference)
-    window.addEventListener('focus', syncClockPreference)
-    document.addEventListener('visibilitychange', onVisibilityChange)
-
-    return () => {
-      window.removeEventListener('storage', syncClockPreference)
-      window.removeEventListener('focus', syncClockPreference)
-      document.removeEventListener('visibilitychange', onVisibilityChange)
-    }
-  }, [])
-
-  useEffect(() => {
-    if (!adhanAlert?.enabled || !prayerSnapshot || !isAdhanAlertEnabled) {
-      return
-    }
-
-    const nextPrayer = findNextPrayerTrigger(prayerSnapshot)
-    if (!nextPrayer) {
-      return
-    }
-
-    const guardMs = Math.max(1_500, Math.min(5_000, adhanAlert.autoPlayWindowSeconds * 1_000))
-    const delayMs = Math.max(0, nextPrayer.delayMs)
-    const notifyTick = (): void => setClockTick((value) => value + 1)
-
-    const exactTimer = window.setTimeout(notifyTick, delayMs)
-    const guardTimer = window.setTimeout(notifyTick, delayMs + guardMs)
-
-    return () => {
-      window.clearTimeout(exactTimer)
-      window.clearTimeout(guardTimer)
-    }
-  }, [adhanAlert?.autoPlayWindowSeconds, adhanAlert?.enabled, clockTick, isAdhanAlertEnabled, prayerSnapshot])
-
-  useEffect(() => {
-    if (typeof window === 'undefined') {
-      return
-    }
-
-    const resumeCheck = (): void => setClockTick((value) => value + 1)
-    const onVisibilityChange = (): void => {
-      if (document.visibilityState === 'visible') {
-        resumeCheck()
-      }
-    }
-
-    window.addEventListener('focus', resumeCheck)
-    document.addEventListener('visibilitychange', onVisibilityChange)
-
-    return () => {
-      window.removeEventListener('focus', resumeCheck)
-      document.removeEventListener('visibilitychange', onVisibilityChange)
-    }
-  }, [])
-
-  useEffect(() => {
-    if (typeof window === 'undefined') {
-      return
-    }
-
-    window.localStorage.setItem(ADHAN_ALERT_ENABLED_KEY, String(isAdhanAlertEnabled))
-  }, [isAdhanAlertEnabled])
-
-  useEffect(() => {
-    const audio = audioRef.current
-    if (!audio) {
-      return
-    }
-
-    const onPlay = (): void => setIsAudioPlaying(true)
-    const onPause = (): void => setIsAudioPlaying(false)
-    const onEnded = (): void => setIsAudioPlaying(false)
-    audio.addEventListener('play', onPlay)
-    audio.addEventListener('pause', onPause)
-    audio.addEventListener('ended', onEnded)
-
-    return () => {
-      audio.removeEventListener('play', onPlay)
-      audio.removeEventListener('pause', onPause)
-      audio.removeEventListener('ended', onEnded)
-    }
-  }, [])
-
-  useEffect(() => {
-    if (!adhanAlert?.enabled || !duePrayer || !isAdhanAlertEnabled) {
-      return
-    }
-
-    const audio = audioRef.current
-    if (!audio) {
-      return
-    }
-
-    const marker = `${prayerSnapshot?.location.id}:${duePrayer.date}:${duePrayer.prayer.name}`
-    if (typeof window !== 'undefined' && window.localStorage.getItem(ADHAN_ALERT_LAST_PLAYED_KEY) === marker) {
-      return
-    }
-
-    audio.currentTime = 0
-    void audio
-      .play()
-      .then(() => {
-        if (typeof window !== 'undefined') {
-          window.localStorage.setItem(ADHAN_ALERT_LAST_PLAYED_KEY, marker)
-        }
-        setStatusMessage(`Adhan started for ${duePrayer.prayer.name}.`)
-      })
-      .catch(() => {
-        setStatusMessage('Autoplay could not start. Browser autoplay rules or unsupported audio format may block it.')
-      })
-  }, [adhanAlert?.enabled, duePrayer, isAdhanAlertEnabled, prayerSnapshot?.location.id])
-
-  const handleManualAudioToggle = (): void => {
-    const audio = audioRef.current
-    if (!audio) {
-      return
-    }
-
-    if (isAudioPlaying) {
-      audio.pause()
-      setStatusMessage('Adhan audio paused.')
-      return
-    }
-
-    audio.currentTime = 0
-    void audio
-      .play()
-      .then(() => {
-        setStatusMessage('Adhan audio playing.')
-      })
-      .catch(() => {
-        setStatusMessage('Audio could not start. Check browser sound/autoplay permissions.')
-      })
-  }
 
   return (
     <section className="panel reveal link-panel">
@@ -478,14 +133,13 @@ export function QuickLinksSection({ links, prayerSnapshot, prayerTimeline }: Qui
             </p>
           ) : null}
           <div className="adhan-alert-actions">
-            <button type="button" className="icon-btn" onClick={handleManualAudioToggle}>
+            <button type="button" className="icon-btn" onClick={toggleAudioPlayback}>
               {isAudioPlaying ? <Pause size={14} /> : <Play size={14} />}
               {isAudioPlaying ? 'Pause adhan' : 'Play adhan'}
             </button>
             <small className="source-note">Auto-play window: {adhanAlert.autoPlayWindowSeconds}s from each prayer start.</small>
           </div>
           {statusMessage ? <p className="source-note">{statusMessage}</p> : null}
-          <audio ref={audioRef} src={adhanAlert.audioUrl} preload="none" />
         </section>
       ) : null}
 

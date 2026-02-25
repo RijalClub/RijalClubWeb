@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react'
 import { BrowserRouter, Navigate, Route, Routes } from 'react-router-dom'
 
 import { SiteShell } from '@/components/SiteShell'
+import { AdhanAlertProvider } from '@/components/AdhanAlertProvider'
 import { BlogPage } from '@/pages/BlogPage'
 import { loadSiteContent, type SiteContent } from '@/lib/content'
 import { ContactPage } from '@/pages/ContactPage'
@@ -70,21 +71,23 @@ export default function App() {
 
   return (
     <BrowserRouter>
-      <SiteShell profile={content.profile} showStore={content.store.isOpen}>
-        <Routes>
-          <Route path="/" element={<HomePage content={content} />} />
-          <Route path="/blog" element={<BlogPage blog={content.blog} />} />
-          <Route path="/announcements" element={<Navigate to="/blog" replace />} />
-          <Route path="/quran" element={<QuranPage config={content.quran} cache={content.cache.quran} />} />
-          <Route path="/library" element={<LibraryPage config={content.hadith} />} />
-          <Route
-            path="/store"
-            element={content.store.isOpen ? <StorePage store={content.store} profile={content.profile} /> : <Navigate to="/" replace />}
-          />
-          <Route path="/contact" element={<ContactPage config={content.contact} />} />
-          <Route path="*" element={<Navigate to="/" replace />} />
-        </Routes>
-      </SiteShell>
+      <AdhanAlertProvider links={content.links} prayerConfig={content.prayer} prayerCache={content.cache.prayer}>
+        <SiteShell profile={content.profile} showStore={content.store.isOpen}>
+          <Routes>
+            <Route path="/" element={<HomePage content={content} />} />
+            <Route path="/blog" element={<BlogPage blog={content.blog} />} />
+            <Route path="/announcements" element={<Navigate to="/blog" replace />} />
+            <Route path="/quran" element={<QuranPage config={content.quran} cache={content.cache.quran} />} />
+            <Route path="/library" element={<LibraryPage config={content.hadith} />} />
+            <Route
+              path="/store"
+              element={content.store.isOpen ? <StorePage store={content.store} profile={content.profile} /> : <Navigate to="/" replace />}
+            />
+            <Route path="/contact" element={<ContactPage config={content.contact} />} />
+            <Route path="*" element={<Navigate to="/" replace />} />
+          </Routes>
+        </SiteShell>
+      </AdhanAlertProvider>
     </BrowserRouter>
   )
 }

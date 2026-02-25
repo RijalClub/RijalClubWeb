@@ -403,6 +403,41 @@ a {
   flex-wrap: wrap;
 }
 
+.adhan-mini-player {
+  position: fixed;
+  right: 1rem;
+  bottom: 1rem;
+  z-index: 140;
+  width: min(360px, calc(100vw - 2rem));
+  border: 1px solid rgba(115, 242, 194, 0.38);
+  background:
+    linear-gradient(135deg, rgba(115, 242, 194, 0.16), rgba(169, 255, 95, 0.08)),
+    rgba(5, 10, 14, 0.92);
+  backdrop-filter: blur(8px);
+  display: grid;
+  gap: 0.55rem;
+  padding: 0.75rem;
+}
+
+.adhan-mini-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.55rem;
+  flex-wrap: wrap;
+}
+
+.adhan-mini-actions {
+  display: flex;
+  align-items: center;
+  gap: 0.45rem;
+  flex-wrap: wrap;
+}
+
+.adhan-mini-status {
+  margin: 0;
+}
+
 .resource-sections {
   margin-top: 0.9rem;
   display: grid;
@@ -2202,6 +2237,13 @@ a {
 
   .prayer-week-tabs {
     grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .adhan-mini-player {
+    left: 0.5rem;
+    right: 0.5rem;
+    bottom: 0.55rem;
+    width: auto;
   }
 
   .verse-card {
