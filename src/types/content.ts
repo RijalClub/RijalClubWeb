@@ -133,6 +133,7 @@ export interface BlogPost {
   tags: string[]
   paragraphs: string[]
   checklist?: string[]
+  html?: string
 }
 
 export interface BlogConfig {
@@ -204,6 +205,7 @@ export interface PrayerConfig {
 
 export interface StoreStripeConfig {
   enabled: boolean
+  publishableKey?: string
   checkoutEndpoint?: string
   successUrl?: string
   cancelUrl?: string

@@ -997,6 +997,23 @@ a {
   font-size: 0.87rem;
 }
 
+.fitness-copy-html {
+  color: var(--muted);
+}
+
+.fitness-copy-html p,
+.fitness-copy-html li {
+  margin: 0 0 0.6rem;
+  line-height: 1.72;
+  font-size: 0.87rem;
+}
+
+.fitness-copy-html ul,
+.fitness-copy-html ol {
+  margin: 0;
+  padding-left: 1.2rem;
+}
+
 .fitness-checklist {
   margin: 0.1rem 0 0;
   padding-left: 1.1rem;

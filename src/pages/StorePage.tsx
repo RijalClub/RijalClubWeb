@@ -67,6 +67,7 @@ export function StorePage({ store, profile }: StorePageProps) {
         body: JSON.stringify({
           productId: product.id,
           stripePriceId: product.stripePriceId,
+          publishableKey: store.stripe.publishableKey,
           successUrl: store.stripe.successUrl,
           cancelUrl: store.stripe.cancelUrl,
         }),

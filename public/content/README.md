@@ -27,12 +27,20 @@ This folder drives the site UI. Update these files and refresh the website:
 
 - `blog.json` drives the full `/blog` page layout and content.
 
-## Media folders
+## Media source
 
-- Put local images in `assets/images`
-- Put local videos in `assets/videos`
-- Put local PDFs in `assets/pdfs`
-- Reference local files like `/content/assets/images/your-file.png`
+- Media is now hosted in the public repository:
+  - `https://github.com/RijalClub/RijalClubWebMedia`
+- Raw base URL:
+  - `https://raw.githubusercontent.com/RijalClub/RijalClubWebMedia/main`
+- Section-based image folders:
+  - `assets/images/announcements/*`
+  - `assets/images/blog/*`
+  - `assets/images/store/*`
+  - `assets/images/profile/*`
+  - `assets/images/hadith/covers/*`
+- Reference files with full URLs, for example:
+  - `https://raw.githubusercontent.com/RijalClub/RijalClubWebMedia/main/assets/images/store/your-file.png`
 - Store product galleries:
   - `store.products[].media` uses `{ "type": "image" | "video", "url": "...", "posterUrl"?: "...", "alt"?: "..." }`
 - Recommended card and modal media ratio: `16:9` (for example `1600x900`)
@@ -51,17 +59,19 @@ This folder drives the site UI. Update these files and refresh the website:
   - `play-circle`
   - `link`
 
-## Remote content repo mode
+## CMS/API mode
 
-Set `VITE_CONTENT_BASE_URL` to your GitHub raw content URL.
-
-Example:
+Use the CMS API as the public source:
 
 ```bash
-VITE_CONTENT_BASE_URL=https://raw.githubusercontent.com/your-org/rijal-content/main/content
+VITE_CONTENT_BASE_URL=/api/content
+VITE_CONTENT_BASE_PUBLIC_KEY=your_public_key
 ```
 
-The app will request `${VITE_CONTENT_BASE_URL}/profile.json`, etc.
+The app requests `${VITE_CONTENT_BASE_URL}/profile.json` etc, and sends
+`x-content-public-key` automatically when `VITE_CONTENT_BASE_PUBLIC_KEY` is set.
+
+This repository should stay private; only the API service should read/write it.
 
 ## Cache tuning
 

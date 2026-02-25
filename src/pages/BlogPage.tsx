@@ -71,11 +71,15 @@ export function BlogPage({ blog }: BlogPageProps) {
               <h2>{post.title}</h2>
               <p className="fitness-excerpt">{post.excerpt}</p>
 
-              <div className="fitness-copy">
-                {post.paragraphs.map((paragraph, index) => (
-                  <p key={`${post.id}-paragraph-${index}`}>{paragraph}</p>
-                ))}
-              </div>
+              {post.html ? (
+                <div className="fitness-copy fitness-copy-html" dangerouslySetInnerHTML={{ __html: post.html }} />
+              ) : (
+                <div className="fitness-copy">
+                  {post.paragraphs.map((paragraph, index) => (
+                    <p key={`${post.id}-paragraph-${index}`}>{paragraph}</p>
+                  ))}
+                </div>
+              )}
 
               {post.checklist && post.checklist.length > 0 ? (
                 <ul className="fitness-checklist">

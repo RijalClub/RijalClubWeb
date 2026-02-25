@@ -5,6 +5,7 @@
   "closedMessage": "Store is currently closed while we prepare the first drop.",
   "stripe": {
     "enabled": false,
+    "publishableKey": "pk_test_replace_me",
     "checkoutEndpoint": "https://example.com/api/create-checkout-session",
     "successUrl": "https://example.com/store/success",
     "cancelUrl": "https://example.com/store/cancel"
@@ -17,7 +18,7 @@
       "badge": "Coming soon",
       "price": 45,
       "currency": "GBP",
-      "image": "/content/assets/images/store-hoodie.png",
+      "image": "https://raw.githubusercontent.com/RijalClub/RijalClubWebMedia/main/assets/images/store/store-hoodie.png",
       "enabled": true,
       "checkoutUrl": "https://buy.stripe.com/test_example_hoodie"
     },
@@ -28,7 +29,7 @@
       "badge": "Drop 01",
       "price": 22,
       "currency": "GBP",
-      "image": "/content/assets/images/store-tee.png",
+      "image": "https://raw.githubusercontent.com/RijalClub/RijalClubWebMedia/main/assets/images/store/store-tee.png",
       "enabled": true,
       "checkoutUrl": "https://buy.stripe.com/test_example_tee"
     },
@@ -39,7 +40,7 @@
       "badge": "Limited",
       "price": 18,
       "currency": "GBP",
-      "image": "/content/assets/images/store-bottle.png",
+      "image": "https://raw.githubusercontent.com/RijalClub/RijalClubWebMedia/main/assets/images/store/store-bottle.png",
       "enabled": true,
       "checkoutUrl": "https://buy.stripe.com/test_example_bottle"
     }
