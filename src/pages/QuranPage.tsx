@@ -1,5 +1,14 @@
-import './quran.css'
 import { Button } from "@/components/ui/button";
+import { Badge } from "@/components/ui/badge";
+import { Switch } from "@/components/ui/switch";
+import { Slider } from "@/components/ui/slider";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import {
   formatArabicAyahNumber,
   loadChapterAudioUrl,
@@ -26,14 +35,20 @@ import {
   ChevronRight,
   Languages,
   PlayCircle,
+  RefreshCw,
   RotateCcw,
   ScanText,
   Search,
   Sun,
   Type,
   X,
+  Settings2,
+  Volume2,
+  Maximize2
 } from "lucide-react";
 import { useEffect, useMemo, useState } from "react";
+import { cn } from "@/lib/utils";
+import './quran.css'
 
 interface QuranPageProps {
   config: QuranConfig;
@@ -51,25 +66,11 @@ const SCRIPT_OPTIONS: QuranScript[] = [
   "text_imlaei_simple",
 ];
 
-function loadStoredValue<T>(
-  key: string,
-  fallback: T,
-  parser: (value: string) => T | null,
-): T {
-  if (typeof window === "undefined") {
-    return fallback;
-  }
-
+function loadStoredValue<T>(key: string, fallback: T, parser: (value: string) => T | null): T {
+  if (typeof window === "undefined") return fallback;
   const stored = window.localStorage.getItem(key);
-  if (!stored) {
-    return fallback;
-  }
-
-  try {
-    return parser(stored) ?? fallback;
-  } catch {
-    return fallback;
-  }
+  if (!stored) return fallback;
+  try { return parser(stored) ?? fallback; } catch { return fallback; }
 }
 
 function chapterLabel(chapter: QuranChapter): string {
@@ -77,1152 +78,483 @@ function chapterLabel(chapter: QuranChapter): string {
 }
 
 function clampPage(page: number, maxPage: number): number {
-  if (!Number.isFinite(page)) {
-    return 1;
-  }
-
-  return Math.max(1, Math.min(maxPage, page));
+  return !Number.isFinite(page) ? 1 : Math.max(1, Math.min(maxPage, page));
 }
 
 function arabicScriptClass(script: QuranScript): string {
   switch (script) {
-    case "text_qpc_hafs":
-      return "quran-script-qpc";
-    case "text_qpc_nastaleeq_hafs":
-      return "quran-script-nastaleeq";
-    default:
-      return "quran-script-uthmani";
+    case "text_qpc_hafs": return "quran-script-qpc";
+    case "text_qpc_nastaleeq_hafs": return "quran-script-nastaleeq";
+    default: return "quran-script-uthmani";
   }
 }
 
 export function QuranPage({ config, cache }: QuranPageProps) {
   const [chapters, setChapters] = useState<QuranChapter[]>([]);
-  const [translations, setTranslations] = useState<QuranTranslationResource[]>(
-    [],
-  );
+  const [translations, setTranslations] = useState<QuranTranslationResource[]>([]);
   const [reciters, setReciters] = useState<QuranReciter[]>([]);
-
   const [bootstrapLoading, setBootstrapLoading] = useState(true);
   const [bootstrapError, setBootstrapError] = useState<string | null>(null);
 
-  const [chapterId, setChapterId] = useState(() =>
-    loadStoredValue("rijal:quran:chapter", config.defaultChapterId, (value) => {
-      const parsed = Number.parseInt(value, 10);
-      return Number.isNaN(parsed) ? null : parsed;
-    }),
-  );
-
-  const [reciterId, setReciterId] = useState(() =>
-    loadStoredValue("rijal:quran:reciter", config.defaultReciterId, (value) => {
-      const parsed = Number.parseInt(value, 10);
-      return Number.isNaN(parsed) ? null : parsed;
-    }),
-  );
-
-  const [script, setScript] = useState<QuranScript>(() =>
-    loadStoredValue("rijal:quran:script", config.defaultScript, (value) => {
-      if (SCRIPT_OPTIONS.includes(value as QuranScript)) {
-        return value as QuranScript;
-      }
-
-      return null;
-    }),
-  );
-
-  const [fontScale, setFontScale] = useState(() =>
-    loadStoredValue("rijal:quran:font-scale", 1.45, (value) => {
-      const parsed = Number.parseFloat(value);
-      return Number.isNaN(parsed) ? null : Math.max(1.1, Math.min(2.3, parsed));
-    }),
-  );
-
-  const [showTransliteration, setShowTransliteration] = useState(() =>
-    loadStoredValue("rijal:quran:show-transliteration", true, (value) => {
-      if (value === "true") return true;
-      if (value === "false") return false;
-      return null;
-    }),
-  );
-
-  const [showTranslations, setShowTranslations] = useState(() =>
-    loadStoredValue("rijal:quran:show-translations", true, (value) => {
-      if (value === "true") return true;
-      if (value === "false") return false;
-      return null;
-    }),
-  );
-
-  const [lightMode, setLightMode] = useState(() =>
-    loadStoredValue("rijal:quran:light-mode", false, (value) => {
-      if (value === "true") return true;
-      if (value === "false") return false;
-      return null;
-    }),
-  );
-
-  const [selectedTranslationIds, setSelectedTranslationIds] = useState<
-    number[]
-  >(() =>
-    loadStoredValue(
-      "rijal:quran:translations",
-      config.defaultTranslationIds,
-      (value) => {
-        const parsed = JSON.parse(value) as unknown;
-        if (!Array.isArray(parsed)) {
-          return null;
-        }
-
-        const asNumbers = parsed
-          .map((item) => Number.parseInt(String(item), 10))
-          .filter((item) => Number.isFinite(item));
-
-        return asNumbers.length > 0 ? asNumbers : null;
-      },
-    ),
-  );
-
+  const [chapterId, setChapterId] = useState(() => loadStoredValue("rijal:quran:chapter", config.defaultChapterId, v => Number.parseInt(v, 10)));
+  const [reciterId, setReciterId] = useState(() => loadStoredValue("rijal:quran:reciter", config.defaultReciterId, v => Number.parseInt(v, 10)));
+  const [script, setScript] = useState<QuranScript>(() => loadStoredValue("rijal:quran:script", config.defaultScript, v => SCRIPT_OPTIONS.includes(v as QuranScript) ? v as QuranScript : null));
+  const [fontScale, setFontScale] = useState(() => loadStoredValue("rijal:quran:font-scale", 1.45, v => Math.max(1.1, Math.min(2.3, Number.parseFloat(v)))));
+  const [showTransliteration, setShowTransliteration] = useState(() => loadStoredValue("rijal:quran:show-transliteration", true, v => v === "true"));
+  const [showTranslations, setShowTranslations] = useState(() => loadStoredValue("rijal:quran:show-translations", true, v => v === "true"));
+  const [lightMode, setLightMode] = useState(() => loadStoredValue("rijal:quran:light-mode", false, v => v === "true"));
+  const [selectedTranslationIds, setSelectedTranslationIds] = useState<number[]>(() => loadStoredValue("rijal:quran:translations", config.defaultTranslationIds, v => JSON.parse(v)));
+  
   const [translationQuery, setTranslationQuery] = useState("");
   const [languageFilter, setLanguageFilter] = useState("all");
-
   const [verses, setVerses] = useState<QuranVerse[]>([]);
   const [versesLoading, setVersesLoading] = useState(false);
   const [versesError, setVersesError] = useState<string | null>(null);
-
   const [audioUrl, setAudioUrl] = useState<string | null>(null);
 
   const [isReaderModeOpen, setIsReaderModeOpen] = useState(false);
-  const [readerPage, setReaderPage] = useState(() =>
-    loadStoredValue("rijal:quran:reader-page", 1, (value) => {
-      const parsed = Number.parseInt(value, 10);
-      return Number.isNaN(parsed) ? null : parsed;
-    }),
-  );
-  const [readerDirection, setReaderDirection] = useState<
-    "next" | "prev" | null
-  >(null);
+  const [readerPage, setReaderPage] = useState(() => loadStoredValue("rijal:quran:reader-page", 1, v => Number.parseInt(v, 10)));
+  const [readerDirection, setReaderDirection] = useState<"next" | "prev" | null>(null);
   const [readerVerses, setReaderVerses] = useState<QuranPageVerse[]>([]);
   const [readerLoading, setReaderLoading] = useState(false);
   const [readerError, setReaderError] = useState<string | null>(null);
 
   useEffect(() => {
     let isMounted = true;
-
     setBootstrapLoading(true);
-    void loadQuranBootstrap(config.apiBaseUrl, {
-      ttlMs: quranTtlHelpers().hoursToMs(cache.bootstrapHours),
-    })
-      .then((payload) => {
-        if (!isMounted) {
-          return;
-        }
-
-        setChapters(payload.chapters);
-        setTranslations(payload.translations);
-        setReciters(payload.reciters);
-        setBootstrapError(null);
-      })
-      .catch((error: unknown) => {
-        if (!isMounted) {
-          return;
-        }
-
-        setBootstrapError(
-          error instanceof Error
-            ? error.message
-            : "Failed loading Quran resources.",
-        );
-      })
-      .finally(() => {
-        if (isMounted) {
-          setBootstrapLoading(false);
-        }
-      });
-
-    return () => {
-      isMounted = false;
-    };
+    loadQuranBootstrap(config.apiBaseUrl, { ttlMs: quranTtlHelpers().hoursToMs(cache.bootstrapHours) })
+      .then(p => { if (isMounted) { setChapters(p.chapters); setTranslations(p.translations); setReciters(p.reciters); setBootstrapError(null); } })
+      .catch(err => { if (isMounted) setBootstrapError(err instanceof Error ? err.message : "Load failed."); })
+      .finally(() => { if (isMounted) setBootstrapLoading(false); });
+    return () => { isMounted = false; };
   }, [cache.bootstrapHours, config.apiBaseUrl]);
 
-  useEffect(() => {
-    if (typeof window === "undefined") {
-      return;
-    }
-
+  useEffect(() => { if (typeof window !== "undefined") {
     window.localStorage.setItem("rijal:quran:chapter", String(chapterId));
-  }, [chapterId]);
-
-  useEffect(() => {
-    if (typeof window === "undefined") {
-      return;
-    }
-
     window.localStorage.setItem("rijal:quran:reciter", String(reciterId));
-  }, [reciterId]);
-
-  useEffect(() => {
-    if (typeof window === "undefined") {
-      return;
-    }
-
     window.localStorage.setItem("rijal:quran:script", script);
-  }, [script]);
-
-  useEffect(() => {
-    if (typeof window === "undefined") {
-      return;
-    }
-
     window.localStorage.setItem("rijal:quran:font-scale", String(fontScale));
-  }, [fontScale]);
-
-  useEffect(() => {
-    if (typeof window === "undefined") {
-      return;
-    }
-
-    window.localStorage.setItem(
-      "rijal:quran:show-transliteration",
-      String(showTransliteration),
-    );
-  }, [showTransliteration]);
-
-  useEffect(() => {
-    if (typeof window === "undefined") {
-      return;
-    }
-
-    window.localStorage.setItem(
-      "rijal:quran:show-translations",
-      String(showTranslations),
-    );
-  }, [showTranslations]);
-
-  useEffect(() => {
-    if (typeof window === "undefined") {
-      return;
-    }
-
+    window.localStorage.setItem("rijal:quran:show-transliteration", String(showTransliteration));
+    window.localStorage.setItem("rijal:quran:show-translations", String(showTranslations));
     window.localStorage.setItem("rijal:quran:light-mode", String(lightMode));
-  }, [lightMode]);
-
-  useEffect(() => {
-    if (typeof window === "undefined") {
-      return;
-    }
-
-    window.localStorage.setItem(
-      "rijal:quran:translations",
-      JSON.stringify(selectedTranslationIds),
-    );
-  }, [selectedTranslationIds]);
-
-  const maxPage = useMemo(() => {
-    if (chapters.length === 0) {
-      return 604;
-    }
-
-    return chapters.reduce(
-      (highest, chapter) => Math.max(highest, chapter.pages[1]),
-      1,
-    );
-  }, [chapters]);
-
-  useEffect(() => {
-    if (typeof window === "undefined") {
-      return;
-    }
-
+    window.localStorage.setItem("rijal:quran:translations", JSON.stringify(selectedTranslationIds));
     window.localStorage.setItem("rijal:quran:reader-page", String(readerPage));
-  }, [readerPage]);
+  }}, [chapterId, reciterId, script, fontScale, showTransliteration, showTranslations, lightMode, selectedTranslationIds, readerPage]);
 
-  useEffect(() => {
-    if (translations.length === 0) {
-      return;
-    }
+  const maxPage = useMemo(() => chapters.length === 0 ? 604 : chapters.reduce((h, c) => Math.max(h, c.pages[1]), 1), [chapters]);
+  const selectedChapter = useMemo(() => chapters.find(c => c.id === chapterId), [chapterId, chapters]);
+  const readerChapter = useMemo(() => chapters.find(c => readerPage >= c.pages[0] && readerPage <= c.pages[1]), [chapters, readerPage]);
+  const translationMap = useMemo(() => {
+    const map = new Map<number, QuranTranslationResource>();
+    for (const t of translations) map.set(t.id, t);
+    return map;
+  }, [translations]);
 
-    const allowedIds = new Set(
-      translations.map((translation) => translation.id),
-    );
-    const validatedSelection = selectedTranslationIds.filter((id) =>
-      allowedIds.has(id),
-    );
-
-    if (validatedSelection.length === 0) {
-      const fallback = config.defaultTranslationIds.find((id) =>
-        allowedIds.has(id),
-      );
-      if (fallback) {
-        setSelectedTranslationIds([fallback]);
-      } else {
-        setSelectedTranslationIds([translations[0].id]);
-      }
-      return;
-    }
-
-    if (validatedSelection.length !== selectedTranslationIds.length) {
-      setSelectedTranslationIds(validatedSelection);
-    }
-  }, [config.defaultTranslationIds, selectedTranslationIds, translations]);
-
-  useEffect(() => {
-    if (chapters.length === 0) {
-      return;
-    }
-
-    if (!chapters.some((chapter) => chapter.id === chapterId)) {
-      setChapterId(config.defaultChapterId);
-    }
-  }, [chapterId, chapters, config.defaultChapterId]);
-
-  useEffect(() => {
-    if (reciters.length === 0) {
-      return;
-    }
-
-    if (!reciters.some((reciter) => reciter.id === reciterId)) {
-      setReciterId(config.defaultReciterId);
-    }
-  }, [config.defaultReciterId, reciterId, reciters]);
+  const languageOptions = useMemo(() => ["all", ...new Set(translations.map(t => t.languageName))], [translations]);
+  const filteredTranslations = useMemo(() => {
+    const query = translationQuery.trim().toLowerCase();
+    return translations.filter(t => (languageFilter === "all" || t.languageName === languageFilter) && (!query || t.name.toLowerCase().includes(query) || t.authorName.toLowerCase().includes(query)));
+  }, [languageFilter, translationQuery, translations]);
 
   const translationIdsToFetch = useMemo(() => {
-    const base: number[] = [];
-
-    if (showTranslations) {
-      base.push(...selectedTranslationIds);
-    }
-
-    if (showTransliteration) {
-      base.push(config.transliterationResourceId);
-    }
-
+    const base = showTranslations ? [...selectedTranslationIds] : [];
+    if (showTransliteration) base.push(config.transliterationResourceId);
     return [...new Set(base)];
-  }, [
-    config.transliterationResourceId,
-    selectedTranslationIds,
-    showTranslations,
-    showTransliteration,
-  ]);
+  }, [config.transliterationResourceId, selectedTranslationIds, showTranslations, showTransliteration]);
 
   useEffect(() => {
     let isMounted = true;
     setVersesLoading(true);
-
-    void loadChapterVerses({
-      apiBaseUrl: config.apiBaseUrl,
-      chapterId,
-      translationIds: translationIdsToFetch,
-      ttlMs: quranTtlHelpers().daysToMs(cache.chapterVersesDays),
-    })
-      .then((payload) => {
-        if (!isMounted) {
-          return;
-        }
-
-        setVerses(payload);
-        setVersesError(null);
-      })
-      .catch((error: unknown) => {
-        if (!isMounted) {
-          return;
-        }
-
-        setVersesError(
-          error instanceof Error
-            ? error.message
-            : "Unable to load verses right now.",
-        );
-      })
-      .finally(() => {
-        if (isMounted) {
-          setVersesLoading(false);
-        }
-      });
-
-    return () => {
-      isMounted = false;
-    };
-  }, [
-    cache.chapterVersesDays,
-    chapterId,
-    config.apiBaseUrl,
-    translationIdsToFetch,
-  ]);
+    loadChapterVerses({ apiBaseUrl: config.apiBaseUrl, chapterId, translationIds: translationIdsToFetch, ttlMs: quranTtlHelpers().daysToMs(cache.chapterVersesDays) })
+      .then(p => { if (isMounted) { setVerses(p); setVersesError(null); } })
+      .catch(err => { if (isMounted) setVersesError(err instanceof Error ? err.message : "Verses failed."); })
+      .finally(() => { if (isMounted) setVersesLoading(false); });
+    return () => { isMounted = false; };
+  }, [cache.chapterVersesDays, chapterId, config.apiBaseUrl, translationIdsToFetch]);
 
   useEffect(() => {
     let isMounted = true;
-
-    void loadChapterAudioUrl({
-      apiBaseUrl: config.apiBaseUrl,
-      chapterId,
-      reciterId,
-      ttlMs: quranTtlHelpers().hoursToMs(cache.chapterAudioHours),
-    })
-      .then((result) => {
-        if (isMounted) {
-          setAudioUrl(result);
-        }
-      })
-      .catch(() => {
-        if (isMounted) {
-          setAudioUrl(null);
-        }
-      });
-
-    return () => {
-      isMounted = false;
-    };
+    loadChapterAudioUrl({ apiBaseUrl: config.apiBaseUrl, chapterId, reciterId, ttlMs: quranTtlHelpers().hoursToMs(cache.chapterAudioHours) })
+      .then(res => isMounted && setAudioUrl(res))
+      .catch(() => isMounted && setAudioUrl(null));
+    return () => { isMounted = false; };
   }, [cache.chapterAudioHours, chapterId, config.apiBaseUrl, reciterId]);
 
   useEffect(() => {
-    if (!isReaderModeOpen) {
-      return;
-    }
-
+    if (!isReaderModeOpen) return;
     let isMounted = true;
     const page = clampPage(readerPage, maxPage);
-    if (page !== readerPage) {
-      setReaderPage(page);
-    }
-
     setReaderLoading(true);
-    void loadQuranPageVerses({
-      apiBaseUrl: config.apiBaseUrl,
-      pageNumber: page,
-      ttlMs: quranTtlHelpers().daysToMs(cache.pageVersesDays),
-    })
-      .then((payload) => {
-        if (!isMounted) {
-          return;
-        }
+    loadQuranPageVerses({ apiBaseUrl: config.apiBaseUrl, pageNumber: page, ttlMs: quranTtlHelpers().daysToMs(cache.pageVersesDays) })
+      .then(p => { if (isMounted) { setReaderVerses(p); setReaderError(null); } })
+      .catch(err => { if (isMounted) setReaderError(err instanceof Error ? err.message : "Page failed."); })
+      .finally(() => { if (isMounted) setReaderLoading(false); });
+    return () => { isMounted = false; };
+  }, [cache.pageVersesDays, config.apiBaseUrl, isReaderModeOpen, maxPage, readerPage]);
 
-        setReaderVerses(payload);
-        setReaderError(null);
-      })
-      .catch((error: unknown) => {
-        if (!isMounted) {
-          return;
-        }
-
-        setReaderError(
-          error instanceof Error
-            ? error.message
-            : "Unable to load this Quran page.",
-        );
-      })
-      .finally(() => {
-        if (isMounted) {
-          setReaderLoading(false);
-        }
-      });
-
-    return () => {
-      isMounted = false;
-    };
-  }, [
-    cache.pageVersesDays,
-    config.apiBaseUrl,
-    isReaderModeOpen,
-    maxPage,
-    readerPage,
-  ]);
-
-  useEffect(() => {
-    if (!isReaderModeOpen) {
-      return;
-    }
-
-    const previousOverflow = document.body.style.overflow;
-    document.body.style.overflow = "hidden";
-
-    return () => {
-      document.body.style.overflow = previousOverflow;
-    };
-  }, [isReaderModeOpen]);
-
-  useEffect(() => {
-    if (!isReaderModeOpen) {
-      return;
-    }
-
-    const onEscape = (event: KeyboardEvent): void => {
-      if (event.key === "Escape") {
-        setIsReaderModeOpen(false);
-      }
-    };
-
-    window.addEventListener("keydown", onEscape);
-    return () => window.removeEventListener("keydown", onEscape);
-  }, [isReaderModeOpen]);
-
-  const selectedChapter = useMemo(
-    () => chapters.find((chapter) => chapter.id === chapterId),
-    [chapterId, chapters],
-  );
-
-  const translationMap = useMemo(() => {
-    const map = new Map<number, QuranTranslationResource>();
-
-    for (const translation of translations) {
-      map.set(translation.id, translation);
-    }
-
-    return map;
-  }, [translations]);
-
-  const languageOptions = useMemo(
-    () => [
-      "all",
-      ...new Set(translations.map((translation) => translation.languageName)),
-    ],
-    [translations],
-  );
-
-  const filteredTranslations = useMemo(() => {
-    const query = translationQuery.trim().toLowerCase();
-
-    return translations.filter((translation) => {
-      if (
-        languageFilter !== "all" &&
-        translation.languageName !== languageFilter
-      ) {
-        return false;
-      }
-
-      if (!query) {
-        return true;
-      }
-
-      return (
-        translation.name.toLowerCase().includes(query) ||
-        translation.authorName.toLowerCase().includes(query) ||
-        translation.languageName.toLowerCase().includes(query)
-      );
-    });
-  }, [languageFilter, translationQuery, translations]);
-
-  const selectedTranslationResources = useMemo(
-    () =>
-      selectedTranslationIds
-        .map((id) => translationMap.get(id))
-        .filter((translation): translation is QuranTranslationResource =>
-          Boolean(translation),
-        ),
-    [selectedTranslationIds, translationMap],
-  );
-
-  const readerChapter = useMemo(
-    () =>
-      chapters.find(
-        (chapter) =>
-          readerPage >= chapter.pages[0] && readerPage <= chapter.pages[1],
-      ),
-    [chapters, readerPage],
-  );
-
-  const readerPageOptions = useMemo(
-    () => Array.from({ length: maxPage }, (_, index) => index + 1),
-    [maxPage],
-  );
-
-  useEffect(() => {
-    if (!isReaderModeOpen || !readerChapter || chapterId === readerChapter.id) {
-      return;
-    }
-
-    setChapterId(readerChapter.id);
-  }, [chapterId, isReaderModeOpen, readerChapter]);
-
-  const toggleTranslation = (translationId: number): void => {
-    const exists = selectedTranslationIds.includes(translationId);
-
+  const toggleTranslation = (id: number) => {
+    const exists = selectedTranslationIds.includes(id);
     if (exists) {
-      const without = selectedTranslationIds.filter(
-        (id) => id !== translationId,
-      );
-      if (without.length > 0) {
-        setSelectedTranslationIds(without);
-      }
-      return;
+      if (selectedTranslationIds.length > 1) setSelectedTranslationIds(selectedTranslationIds.filter(i => i !== id));
+    } else if (selectedTranslationIds.length < config.maxSelectableTranslations) {
+      setSelectedTranslationIds([...selectedTranslationIds, id]);
     }
-
-    if (selectedTranslationIds.length >= config.maxSelectableTranslations) {
-      return;
-    }
-
-    setSelectedTranslationIds([...selectedTranslationIds, translationId]);
   };
 
-  const goToReaderPage = (
-    nextPage: number,
-    direction: "next" | "prev" | null,
-  ): void => {
+  const openReaderMode = () => {
+    setReaderPage(clampPage(selectedChapter?.pages[0] ?? 1, maxPage));
+    setIsReaderModeOpen(true);
+  };
+
+  const goToReaderPage = (nextPage: number, direction: "next" | "prev" | null) => {
     setReaderDirection(direction);
     setReaderPage(clampPage(nextPage, maxPage));
   };
 
-  const openReaderMode = (): void => {
-    const startingPage = selectedChapter?.pages[0] ?? 1;
-    setReaderDirection(null);
-    setReaderPage(clampPage(startingPage, maxPage));
-    setIsReaderModeOpen(true);
-  };
-
-  const resetQuranPreferences = (): void => {
-    const defaultChapterPage =
-      chapters.find((chapter) => chapter.id === config.defaultChapterId)
-        ?.pages[0] ?? 1;
-
-    setChapterId(config.defaultChapterId);
-    setReciterId(config.defaultReciterId);
-    setScript(config.defaultScript);
-    setFontScale(1.45);
-    setShowTransliteration(true);
-    setShowTranslations(true);
-    setLightMode(false);
-    setSelectedTranslationIds(config.defaultTranslationIds);
-    setTranslationQuery("");
-    setLanguageFilter("all");
-    setReaderPage(clampPage(defaultChapterPage, maxPage));
-    setReaderDirection(null);
-    setIsReaderModeOpen(false);
-
-    if (typeof window !== "undefined") {
-      const keys = Object.keys(window.localStorage).filter((key) =>
-        key.startsWith("rijal:quran:"),
-      );
-      for (const key of keys) {
-        window.localStorage.removeItem(key);
-      }
-    }
-  };
-
   return (
-    <main
-      className={
-        lightMode
-          ? "page-grid quran-page quran-theme-light"
-          : "page-grid quran-page"
-      }
-    >
-      <section className="panel reveal quran-hero">
-        <p className="kicker">
-          <BookOpenText size={16} />
-          Al-Quran
-        </p>
-        <h1>{config.title}</h1>
-        <p>{config.description}</p>
-        <p className="quran-meta">
-          {selectedChapter
-            ? `${selectedChapter.nameSimple} • ${selectedChapter.nameArabic}`
-            : "Loading chapter info..."}
-        </p>
-        <p className="source-note">
-          Resume point is saved locally: Surah {chapterId}, page {readerPage}.
-        </p>
+    <main className={cn("page-grid", lightMode && "quran-theme-light")}>
+      <section className="panel p-8 md:p-12 flex flex-col gap-6 reveal">
+        <div className="flex items-center gap-2 text-primary font-bold text-[10px] uppercase tracking-[0.2em]">
+          <BookOpenText size={14} />
+          Holy Quran Experience
+        </div>
+        <h1 className="font-bebas text-5xl md:text-7xl text-white tracking-wide leading-none">{config.title}</h1>
+        <p className="text-muted-foreground text-base md:text-lg max-w-2xl leading-relaxed">{config.description}</p>
+        
+        {selectedChapter && (
+          <div className="flex flex-wrap items-center gap-4 mt-4">
+            <Badge variant="secondary" className="bg-primary/10 text-primary border-primary/20 px-4 py-1.5 text-sm font-bold">
+              Surah {selectedChapter.nameSimple}
+            </Badge>
+            <Badge variant="outline" className="border-white/10 text-muted-foreground px-4 py-1.5 text-sm font-arabic">
+              {selectedChapter.nameArabic}
+            </Badge>
+            <Badge variant="outline" className="border-white/10 text-muted-foreground px-4 py-1.5 text-sm">
+              {selectedChapter.revelationPlace} • {selectedChapter.versesCount} Ayahs
+            </Badge>
+          </div>
+        )}
       </section>
 
-      <section className="panel reveal quran-controls-panel">
-        {bootstrapLoading ? (
-          <p className="state-text">Loading Quran resources...</p>
-        ) : null}
-        {bootstrapError ? (
-          <p className="state-text error">{bootstrapError}</p>
-        ) : null}
+      <section className="panel p-6 flex flex-col gap-8 reveal">
+        <div className="flex items-center justify-between border-b border-white/5 pb-4">
+          <div className="flex items-center gap-2 text-[10px] uppercase tracking-widest text-muted-foreground font-bold">
+            <Settings2 size={14} className="text-primary" />
+            Reading Settings
+          </div>
+          <Button variant="ghost" size="sm" onClick={() => {
+            setChapterId(config.defaultChapterId);
+            setReciterId(config.defaultReciterId);
+            setScript(config.defaultScript);
+            setFontScale(1.45);
+          }} className="text-[10px] uppercase font-bold text-muted-foreground hover:text-white transition-colors">
+            <RotateCcw size={12} className="mr-1.5" /> Reset
+          </Button>
+        </div>
 
-        {!bootstrapLoading && !bootstrapError ? (
-          <>
-            <div className="quran-controls-grid">
-              <label className="select-wrap" htmlFor="quran-chapter-select">
-                Surah
-                <select
-                  id="quran-chapter-select"
-                  value={chapterId}
-                  onChange={(event) =>
-                    setChapterId(Number.parseInt(event.target.value, 10))
-                  }
-                >
-                  {chapters.map((chapter) => (
-                    <option key={chapter.id} value={chapter.id}>
-                      {chapterLabel(chapter)}
-                    </option>
-                  ))}
-                </select>
-              </label>
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+          <div className="flex flex-col gap-2">
+            <label className="text-[10px] uppercase tracking-widest text-muted-foreground font-bold ml-1">Surah</label>
+            <Select value={String(chapterId)} onValueChange={v => setChapterId(Number.parseInt(v, 10))}>
+              <SelectTrigger className="rounded-xl border-white/10 bg-white/5 text-xs text-white h-11">
+                <SelectValue placeholder="Select Surah" />
+              </SelectTrigger>
+              <SelectContent className="bg-background/95 backdrop-blur-xl border-white/10 text-white max-h-[300px]">
+                {chapters.map(c => <SelectItem key={c.id} value={String(c.id)}>{chapterLabel(c)}</SelectItem>)}
+              </SelectContent>
+            </Select>
+          </div>
 
-              <label className="select-wrap" htmlFor="quran-reciter-select">
-                Reciter Audio
-                <select
-                  id="quran-reciter-select"
-                  value={reciterId}
-                  onChange={(event) =>
-                    setReciterId(Number.parseInt(event.target.value, 10))
-                  }
-                >
-                  {reciters.map((reciter) => (
-                    <option key={reciter.id} value={reciter.id}>
-                      {reciter.reciterName}
-                      {reciter.style ? ` (${reciter.style})` : ""}
-                    </option>
-                  ))}
-                </select>
-              </label>
+          <div className="flex flex-col gap-2">
+            <label className="text-[10px] uppercase tracking-widest text-muted-foreground font-bold ml-1">Audio Reciter</label>
+            <Select value={String(reciterId)} onValueChange={v => setReciterId(Number.parseInt(v, 10))}>
+              <SelectTrigger className="rounded-xl border-white/10 bg-white/5 text-xs text-white h-11">
+                <SelectValue placeholder="Select Reciter" />
+              </SelectTrigger>
+              <SelectContent className="bg-background/95 backdrop-blur-xl border-white/10 text-white max-h-[300px]">
+                {reciters.map(r => <SelectItem key={r.id} value={String(r.id)}>{r.reciterName}{r.style ? ` (${r.style})` : ""}</SelectItem>)}
+              </SelectContent>
+            </Select>
+          </div>
 
-              <label className="select-wrap" htmlFor="quran-script-select">
-                Script
-                <select
-                  id="quran-script-select"
-                  value={script}
-                  onChange={(event) =>
-                    setScript(event.target.value as QuranScript)
-                  }
-                >
-                  {SCRIPT_OPTIONS.map((option) => (
-                    <option key={option} value={option}>
-                      {scriptLabel(option)}
-                    </option>
-                  ))}
-                </select>
-              </label>
+          <div className="flex flex-col gap-2">
+            <label className="text-[10px] uppercase tracking-widest text-muted-foreground font-bold ml-1">Arabic Script</label>
+            <Select value={script} onValueChange={v => setScript(v as QuranScript)}>
+              <SelectTrigger className="rounded-xl border-white/10 bg-white/5 text-xs text-white h-11">
+                <SelectValue placeholder="Select Script" />
+              </SelectTrigger>
+              <SelectContent className="bg-background/95 backdrop-blur-xl border-white/10 text-white">
+                {SCRIPT_OPTIONS.map(o => <SelectItem key={o} value={o}>{scriptLabel(o)}</SelectItem>)}
+              </SelectContent>
+            </Select>
+          </div>
 
-              <label className="select-wrap" htmlFor="quran-font-scale">
-                Text Size ({fontScale.toFixed(2)}x)
-                <input
-                  id="quran-font-scale"
-                  type="range"
-                  min="1.1"
-                  max="2.3"
-                  step="0.05"
-                  value={fontScale}
-                  onChange={(event) =>
-                    setFontScale(Number.parseFloat(event.target.value))
-                  }
-                />
-              </label>
+          <div className="flex flex-col gap-2">
+            <div className="flex justify-between items-center ml-1">
+              <label className="text-[10px] uppercase tracking-widest text-muted-foreground font-bold">Text Size</label>
+              <span className="text-[10px] font-bold text-primary">{fontScale.toFixed(2)}x</span>
             </div>
-
-            <div className="quran-toggle-row">
-              <label className="tick-option">
-                <input
-                  type="checkbox"
-                  checked={showTranslations}
-                  onChange={(event) =>
-                    setShowTranslations(event.target.checked)
-                  }
-                />
-                <span>Show translations</span>
-              </label>
-
-              <label className="tick-option">
-                <input
-                  type="checkbox"
-                  checked={showTransliteration}
-                  onChange={(event) =>
-                    setShowTransliteration(event.target.checked)
-                  }
-                />
-                <span>Show transliteration</span>
-              </label>
-
-              <label className="tick-option">
-                <input
-                  type="checkbox"
-                  checked={lightMode}
-                  onChange={(event) => setLightMode(event.target.checked)}
-                />
-                <span>Light mode</span>
-              </label>
-
-              <Button
-                type="button"
-                className="icon-btn"
-                onClick={openReaderMode}
-                variant="outline"
-                size="sm"
-              >
-                <ScanText size={14} />
-                Arabic reader mode
-              </Button>
-
-              <Button
-                type="button"
-                className="icon-btn"
-                onClick={resetQuranPreferences}
-                variant="outline"
-                size="sm"
-              >
-                <RotateCcw size={14} />
-                Reset Quran
-              </Button>
-
-              <span className="state-text">
-                {selectedTranslationIds.length}/
-                {config.maxSelectableTranslations} translations selected
-              </span>
+            <div className="h-11 flex items-center px-2 bg-white/5 rounded-xl border border-white/10">
+              <Slider 
+                min={1.1} max={2.3} step={0.05} 
+                value={[fontScale]} 
+                onValueChange={([v]) => setFontScale(v)}
+                className="w-full"
+              />
             </div>
+          </div>
+        </div>
 
-            <div className="quran-audio-wrap">
-              <p className="kicker audio-kicker">
-                <PlayCircle size={14} />
-                Surah Audio
-              </p>
-              {audioUrl ? (
-                <audio key={audioUrl} controls src={audioUrl} preload="none" />
-              ) : (
-                <p className="state-text">Audio unavailable.</p>
-              )}
-            </div>
+        <div className="flex flex-wrap items-center gap-6 pt-4 border-t border-white/5">
+          <div className="flex items-center gap-3 bg-white/5 px-4 py-2 rounded-full border border-white/5">
+            <span className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest">Translations</span>
+            <Switch checked={showTranslations} onCheckedChange={setShowTranslations} className="scale-75 data-[state=checked]:bg-primary" />
+          </div>
+          <div className="flex items-center gap-3 bg-white/5 px-4 py-2 rounded-full border border-white/5">
+            <span className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest">Transliteration</span>
+            <Switch checked={showTransliteration} onCheckedChange={setShowTransliteration} className="scale-75 data-[state=checked]:bg-primary" />
+          </div>
+          <div className="flex items-center gap-3 bg-white/5 px-4 py-2 rounded-full border border-white/5">
+            <span className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest">Light Mode</span>
+            <Switch checked={lightMode} onCheckedChange={setLightMode} className="scale-75 data-[state=checked]:bg-primary" />
+          </div>
+          <div className="flex-1" />
+          <Button onClick={openReaderMode} className="rounded-full bg-primary text-primary-foreground font-bold shadow-lg shadow-primary/20 transition-all hover:-translate-y-0.5">
+            <ScanText size={16} className="mr-2" /> Arabic Reader Mode
+          </Button>
+        </div>
 
-            <details className="translation-picker">
-              <summary>
-                <Languages size={14} />
-                Translation Library
-              </summary>
-              <div className="translation-filter-row">
-                <label className="input-wrap" htmlFor="translation-search">
-                  <Search size={14} />
-                  <input
-                    id="translation-search"
-                    value={translationQuery}
-                    onChange={(event) =>
-                      setTranslationQuery(event.target.value)
-                    }
-                    placeholder="Search translation, author, or language"
-                  />
-                </label>
-
-                <label
-                  className="select-wrap"
-                  htmlFor="translation-language-filter"
-                >
-                  Language
-                  <select
-                    id="translation-language-filter"
-                    value={languageFilter}
-                    onChange={(event) => setLanguageFilter(event.target.value)}
-                  >
-                    {languageOptions.map((language) => (
-                      <option key={language} value={language}>
-                        {language === "all" ? "All languages" : language}
-                      </option>
-                    ))}
-                  </select>
-                </label>
+        {audioUrl && (
+          <div className="bg-primary/5 border border-primary/20 rounded-2xl p-4 flex flex-col md:flex-row items-center gap-4">
+            <div className="flex items-center gap-3 min-w-[200px]">
+              <div className="size-10 rounded-full bg-primary/20 flex items-center justify-center text-primary">
+                <Volume2 size={20} />
               </div>
-
-              <div className="translation-list">
-                {filteredTranslations.map((translation) => {
-                  const checked = selectedTranslationIds.includes(
-                    translation.id,
-                  );
-                  const disableNewSelection =
-                    !checked &&
-                    selectedTranslationIds.length >=
-                      config.maxSelectableTranslations;
-
-                  return (
-                    <label
-                      key={translation.id}
-                      className={
-                        checked
-                          ? "translation-option checked"
-                          : "translation-option"
-                      }
-                    >
-                      <input
-                        type="checkbox"
-                        checked={checked}
-                        disabled={disableNewSelection}
-                        onChange={() => toggleTranslation(translation.id)}
-                      />
-                      <span>
-                        <strong>{translation.name}</strong>
-                        <small>
-                          {translation.languageName} • {translation.authorName}
-                        </small>
-                      </span>
-                    </label>
-                  );
-                })}
+              <div className="flex flex-col">
+                <span className="text-[10px] uppercase font-bold text-muted-foreground tracking-widest">Now Streaming</span>
+                <span className="text-xs font-bold text-white truncate max-w-[150px]">{selectedChapter?.nameSimple}</span>
               </div>
-            </details>
+            </div>
+            <audio key={audioUrl} controls src={audioUrl} className="flex-1 h-10 filter invert opacity-80" />
+          </div>
+        )}
 
-            <div className="translation-chip-row">
-              {selectedTranslationResources.map((translation) => (
-                <Button
-                  key={translation.id}
-                  type="button"
-                  className="social-pill"
-                  onClick={() => toggleTranslation(translation.id)}
-                  variant="outline"
-                  size="sm"
+        <details className="group border border-white/10 bg-white/[0.02] rounded-2xl overflow-hidden transition-all duration-300">
+          <summary className="flex items-center justify-between p-4 cursor-pointer hover:bg-white/5 list-none">
+            <div className="flex items-center gap-3">
+              <Languages size={18} className="text-primary" />
+              <span className="text-sm font-bold text-white uppercase tracking-widest">Translation Library</span>
+              <Badge variant="outline" className="ml-2 border-primary/20 text-primary">{selectedTranslationIds.length}/{config.maxSelectableTranslations}</Badge>
+            </div>
+            <ChevronRight size={18} className="text-muted-foreground transition-transform group-open:rotate-90" />
+          </summary>
+          <div className="p-6 flex flex-col gap-6 border-t border-white/5">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div className="relative">
+                <Search size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground" />
+                <input 
+                  className="w-full h-11 pl-10 pr-4 bg-white/5 border border-white/10 rounded-xl text-sm focus:outline-none focus:border-primary/50 text-white placeholder:text-muted-foreground"
+                  placeholder="Search translations..."
+                  value={translationQuery}
+                  onChange={e => setTranslationQuery(e.target.value)}
+                />
+              </div>
+              <Select value={languageFilter} onValueChange={setLanguageFilter}>
+                <SelectTrigger className="h-11 rounded-xl border-white/10 bg-white/5 text-xs text-white">
+                  <SelectValue placeholder="Language Filter" />
+                </SelectTrigger>
+                <SelectContent className="bg-background/95 backdrop-blur-xl border-white/10 text-white max-h-[300px]">
+                  {languageOptions.map(l => <SelectItem key={l} value={l}>{l === "all" ? "All Languages" : l}</SelectItem>)}
+                </SelectContent>
+              </Select>
+            </div>
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3 max-h-[400px] overflow-y-auto pr-2 scrollbar-premium">
+              {filteredTranslations.map(t => (
+                <div 
+                  key={t.id} 
+                  onClick={() => toggleTranslation(t.id)}
+                  className={cn(
+                    "p-3 rounded-xl border transition-all cursor-pointer flex items-center gap-3",
+                    selectedTranslationIds.includes(t.id) ? "border-primary/50 bg-primary/10" : "border-white/5 bg-white/[0.02] hover:bg-white/5"
+                  )}
                 >
-                  {translation.name}
-                </Button>
+                  <Switch checked={selectedTranslationIds.includes(t.id)} className="scale-75 pointer-events-none" />
+                  <div className="flex flex-col">
+                    <span className="text-xs font-bold text-white">{t.name}</span>
+                    <span className="text-[10px] text-muted-foreground">{t.languageName} • {t.authorName}</span>
+                  </div>
+                </div>
               ))}
             </div>
-          </>
-        ) : null}
+          </div>
+        </details>
       </section>
 
-      <section className="panel reveal quran-reader-panel">
-        {versesLoading ? <p className="state-text">Loading verses...</p> : null}
-        {versesError ? <p className="state-text error">{versesError}</p> : null}
-
-        <div className="verse-list">
-          {verses.map((verse) => {
-            const transliteration = verse.translations.find(
-              (translation) =>
-                translation.resourceId === config.transliterationResourceId,
-            );
-
-            return (
-              <article key={verse.id} className="verse-card">
-                <header className="verse-header">
-                  <strong>{verse.verseKey}</strong>
-                  <span>Ayah {verse.verseNumber}</span>
+      <section className="flex flex-col gap-6 reveal">
+        {versesLoading ? (
+          <div className="flex flex-col items-center justify-center p-20 gap-4">
+            <RefreshCw className="size-8 text-primary animate-spin" />
+            <p className="text-muted-foreground font-medium animate-pulse">Loading revelation...</p>
+          </div>
+        ) : (
+          <div className="grid gap-6">
+            {verses.map((verse) => (
+              <article key={verse.id} className="panel p-8 md:p-12 flex flex-col gap-10 hover:border-primary/20 transition-all duration-500 group">
+                <header className="flex items-center justify-between border-b border-white/5 pb-6">
+                  <div className="flex flex-col">
+                    <span className="text-[10px] uppercase font-bold text-primary tracking-[0.2em]">{verse.verseKey}</span>
+                    <span className="text-[11px] text-muted-foreground font-medium">Revelation {verse.verseNumber}</span>
+                  </div>
+                  <div className="size-10 rounded-xl bg-white/5 flex items-center justify-center text-white/20 group-hover:text-primary transition-colors border border-white/10">
+                    <ScanText size={18} />
+                  </div>
                 </header>
 
-                <div className="quran-arabic-line">
+                <div className="flex flex-col gap-8 text-right" dir="rtl">
                   {script === "text_uthmani_tajweed" ? (
-                    <p
-                      className={`quran-arabic ${arabicScriptClass(script)}`}
-                      style={{ fontSize: `${fontScale}rem` }}
-                      dangerouslySetInnerHTML={{
-                        __html: verseTextByScript(verse, script),
-                      }}
+                    <p 
+                      className={cn("text-white leading-[2.5] quran-arabic", arabicScriptClass(script))}
+                      style={{ fontSize: `${fontScale * 1.5}rem` }}
+                      dangerouslySetInnerHTML={{ __html: verseTextByScript(verse, script) }}
                     />
                   ) : (
-                    <p
-                      className={`quran-arabic ${arabicScriptClass(script)}`}
-                      style={{ fontSize: `${fontScale}rem` }}
+                    <p 
+                      className={cn("text-white leading-[2.5] quran-arabic", arabicScriptClass(script))}
+                      style={{ fontSize: `${fontScale * 1.5}rem` }}
                     >
                       {verseTextByScript(verse, script)}
+                      <span className="ayah-badge mr-4">{formatArabicAyahNumber(verse.verseNumber)}</span>
                     </p>
                   )}
-                  <span
-                    className="ayah-badge"
-                    aria-label={`Ayah ${verse.verseNumber}`}
-                  >
-                    {formatArabicAyahNumber(verse.verseNumber)}
-                  </span>
                 </div>
 
-                {showTransliteration && transliteration ? (
-                  <p className="quran-transliteration">
-                    <Type size={14} />
-                    {transliteration.text}
-                  </p>
-                ) : null}
+                <div className="flex flex-col gap-8 pt-4">
+                  {showTransliteration && (
+                    <div className="flex items-start gap-4 p-4 rounded-2xl bg-white/[0.02] border border-white/5 italic text-sky">
+                      <Type size={18} className="shrink-0 mt-1 opacity-50" />
+                      <p className="text-base leading-relaxed">{verse.translations.find(t => t.resourceId === config.transliterationResourceId)?.text}</p>
+                    </div>
+                  )}
 
-                {showTranslations ? (
-                  <div className="verse-translations">
-                    {selectedTranslationIds.map((translationId) => {
-                      const translationText = verse.translations.find(
-                        (translation) =>
-                          translation.resourceId === translationId,
-                      );
-                      const resource = translationMap.get(translationId);
-
-                      if (!translationText || !resource) {
-                        return null;
-                      }
-
-                      return (
-                        <article
-                          key={`${verse.id}-${translationId}`}
-                          className="verse-translation-block"
-                        >
-                          <h4>{resource.name}</h4>
-                          <p>{translationText.text}</p>
-                        </article>
-                      );
-                    })}
-                  </div>
-                ) : null}
+                  {showTranslations && (
+                    <div className="grid gap-6">
+                      {selectedTranslationIds.map(tId => {
+                        const tText = verse.translations.find(t => t.resourceId === tId);
+                        const res = translationMap.get(tId);
+                        if (!tText || !res) return null;
+                        return (
+                          <div key={tId} className="flex flex-col gap-3 p-6 rounded-2xl bg-white/5 border border-white/10">
+                            <span className="text-[10px] font-bold text-primary uppercase tracking-widest">{res.name}</span>
+                            <p className="text-white/90 text-lg leading-relaxed">{tText.text}</p>
+                          </div>
+                        );
+                      })}
+                    </div>
+                  )}
+                </div>
               </article>
-            );
-          })}
-        </div>
+            ))}
+          </div>
+        )}
       </section>
 
-      {isReaderModeOpen ? (
-        <div
-          className="reader-modal"
-          role="dialog"
-          aria-modal="true"
-          aria-label="Arabic reader mode"
-        >
-          <div
-            className="reader-overlay"
-            onClick={() => setIsReaderModeOpen(false)}
-            aria-hidden="true"
-          />
-          <section className="reader-modal-panel panel">
-            <header className="reader-modal-header">
-              <div>
-                <p className="kicker">
-                  <ScanText size={14} />
-                  Quran Arabic Reader
-                </p>
-                <h2>
-                  {readerChapter
-                    ? `${readerChapter.id}. ${readerChapter.nameSimple} (${readerChapter.nameArabic})`
-                    : `Quran Page ${readerPage}`}
-                </h2>
+      {isReaderModeOpen && (
+        <div className="fixed inset-0 z-[150] flex items-center justify-center p-4 md:p-10 animate-in fade-in duration-300">
+          <div className="absolute inset-0 bg-background/95 backdrop-blur-2xl" onClick={() => setIsReaderModeOpen(false)} />
+          <div className={cn("relative w-full max-w-6xl max-h-full flex flex-col panel border-primary/20 shadow-4xl", lightMode && "bg-white text-slate-900")}>
+            <header className="p-6 md:p-8 flex items-center justify-between border-b border-black/10">
+              <div className="flex items-center gap-4">
+                <div className="size-12 rounded-2xl bg-primary/10 flex items-center justify-center text-primary">
+                  <ScanText size={24} />
+                </div>
+                <div className="flex flex-col">
+                  <h2 className="font-bebas text-2xl md:text-3xl tracking-wide text-white group-light:text-slate-900">
+                    {readerChapter ? `${readerChapter.nameSimple} (${readerChapter.nameArabic})` : `Page ${readerPage}`}
+                  </h2>
+                  <span className="text-[10px] uppercase font-bold text-muted-foreground tracking-widest">Arabic Reader Mode</span>
+                </div>
               </div>
-              <div className="reader-header-actions">
-                <Button
-                  type="button"
-                  className={lightMode ? "icon-btn active" : "icon-btn"}
-                  onClick={() => setLightMode((value) => !value)}
-                  variant="outline"
-                  size="sm"
-                >
-                  <Sun size={14} />
-                  Light mode
+              <div className="flex items-center gap-3">
+                <Button variant="ghost" size="icon" onClick={() => setLightMode(!lightMode)} className="rounded-full hover:bg-black/5">
+                  <Sun size={20} className={lightMode ? "text-primary" : "text-white"} />
                 </Button>
-                <Button
-                  type="button"
-                  className="icon-btn"
-                  onClick={() => setIsReaderModeOpen(false)}
-                  aria-label="Close Arabic reader mode"
-                  variant="outline"
-                  size="sm"
-                >
-                  <X size={14} />
-                  Close
+                <Button variant="ghost" size="icon" onClick={() => setIsReaderModeOpen(false)} className="rounded-full hover:bg-black/5">
+                  <X size={24} className={lightMode ? "text-slate-900" : "text-white"} />
                 </Button>
               </div>
             </header>
 
-            <div className="reader-toolbar">
-              <label className="select-wrap" htmlFor="reader-surah-select">
-                Jump to Surah
-                <select
-                  id="reader-surah-select"
-                  value={readerChapter?.id ?? chapterId}
-                  onChange={(event) => {
-                    const nextChapterId = Number.parseInt(
-                      event.target.value,
-                      10,
-                    );
-                    const nextChapter = chapters.find(
-                      (chapter) => chapter.id === nextChapterId,
-                    );
-                    if (!nextChapter) {
-                      return;
-                    }
-
-                    setChapterId(nextChapter.id);
-                    goToReaderPage(nextChapter.pages[0], "next");
-                  }}
-                >
-                  {chapters.map((chapter) => (
-                    <option key={chapter.id} value={chapter.id}>
-                      {chapterLabel(chapter)}
-                    </option>
-                  ))}
-                </select>
-              </label>
-
-              <label className="select-wrap" htmlFor="reader-page-select">
-                Jump to Page
-                <select
-                  id="reader-page-select"
-                  value={readerPage}
-                  onChange={(event) =>
-                    goToReaderPage(
-                      Number.parseInt(event.target.value, 10),
-                      "next",
-                    )
-                  }
-                >
-                  {readerPageOptions.map((page) => (
-                    <option key={page} value={page}>
-                      Page {page}
-                    </option>
-                  ))}
-                </select>
-              </label>
-
-              <div className="reader-nav-row">
-                <Button
-                  type="button"
-                  className="icon-btn"
-                  disabled={readerPage <= 1}
-                  onClick={() => goToReaderPage(readerPage - 1, "prev")}
-                  variant="outline"
-                  size="sm"
-                >
-                  <ChevronLeft size={14} />
-                  Previous
-                </Button>
-                <Button
-                  type="button"
-                  className="icon-btn"
-                  disabled={readerPage >= maxPage}
-                  onClick={() => goToReaderPage(readerPage + 1, "next")}
-                  variant="outline"
-                  size="sm"
-                >
-                  Next
-                  <ChevronRight size={14} />
-                </Button>
-              </div>
-            </div>
-
-            {readerLoading ? (
-              <p className="state-text">Loading Quran page...</p>
-            ) : null}
-            {readerError ? (
-              <p className="state-text error">{readerError}</p>
-            ) : null}
-
-            <div className="reader-page-card">
-              <div
-                className={
-                  readerDirection === "next"
-                    ? "reader-flow animate-next"
-                    : readerDirection === "prev"
-                      ? "reader-flow animate-prev"
-                      : "reader-flow"
+            <div className="p-4 md:p-6 bg-black/5 border-b border-black/10 flex flex-wrap items-center gap-4">
+              <Select value={String(readerChapter?.id)} onValueChange={v => {
+                const c = chapters.find(x => x.id === Number.parseInt(v, 10));
+                if (c) { 
+                  setChapterId(c.id); 
+                  goToReaderPage(c.pages[0], "next"); 
                 }
-              >
-                {readerVerses.map((verse) => (
-                  <span
-                    key={verse.id}
-                    className="reader-verse-inline"
-                    style={{ fontSize: `${fontScale * 1.05}rem` }}
-                  >
-                    {script === "text_uthmani_tajweed" ? (
-                      <span
-                        className={`reader-verse-text ${arabicScriptClass(script)}`}
-                        dangerouslySetInnerHTML={{
-                          __html: verseTextByScript(verse, script),
-                        }}
-                      />
-                    ) : (
-                      <span
-                        className={`reader-verse-text ${arabicScriptClass(script)}`}
-                      >
-                        {verseTextByScript(verse, script)}
-                      </span>
-                    )}
-                    <span className="reader-ayah-no">
-                      {formatArabicAyahNumber(verse.verseNumber)}
-                    </span>
-                  </span>
-                ))}
+              }}>
+                <SelectTrigger className="w-[180px] rounded-xl border-black/10 bg-white/10">
+                  <SelectValue placeholder="Surah" />
+                </SelectTrigger>
+                <SelectContent className="max-h-[300px]">{chapters.map(c => <SelectItem key={c.id} value={String(c.id)}>{c.nameSimple}</SelectItem>)}</SelectContent>
+              </Select>
+
+              <div className="flex items-center gap-2">
+                <Button variant="outline" size="icon-sm" className="rounded-lg" disabled={readerPage <= 1} onClick={() => goToReaderPage(readerPage - 1, "prev")}>
+                  <ChevronLeft size={16} />
+                </Button>
+                <div className="px-4 py-2 bg-white/10 rounded-lg text-xs font-bold border border-black/10 min-w-[100px] text-center">
+                  Page {readerPage} / {maxPage}
+                </div>
+                <Button variant="outline" size="icon-sm" className="rounded-lg" disabled={readerPage >= maxPage} onClick={() => goToReaderPage(readerPage + 1, "next")}>
+                  <ChevronRight size={16} />
+                </Button>
+              </div>
+              
+              <div className="flex-1" />
+              <div className="flex items-center gap-4 px-4 h-11 bg-black/5 rounded-xl border border-black/5">
+                <span className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground">Zoom</span>
+                <Slider min={1.1} max={2.3} step={0.1} value={[fontScale]} onValueChange={([v]) => setFontScale(v)} className="w-32" />
               </div>
             </div>
 
-            <p className="source-note">
-              13-line-inspired page mode for focused Arabic reading. Use the
-              controls above to jump by surah or page.
-            </p>
-          </section>
+            <div className="flex-1 overflow-y-auto p-10 md:p-20 scrollbar-premium">
+              {readerLoading ? (
+                <div className="size-full flex items-center justify-center animate-pulse"><RefreshCw className="animate-spin size-12 text-primary" /></div>
+              ) : (
+                <div className={cn("max-w-4xl mx-auto flex flex-wrap justify-center gap-y-12 gap-x-6 text-right transition-all duration-500", readerDirection === "next" ? "animate-in slide-in-from-right-10 fade-in" : "animate-in slide-in-from-left-10 fade-in")} dir="rtl">
+                  {readerVerses.map(v => (
+                    <span key={v.id} className="inline-flex flex-wrap items-center justify-center gap-4">
+                      {script === "text_uthmani_tajweed" ? (
+                        <span 
+                          className={cn("quran-arabic leading-[3]", arabicScriptClass(script))}
+                          style={{ fontSize: `${fontScale * 1.8}rem` }}
+                          dangerouslySetInnerHTML={{ __html: verseTextByScript(v, script) }}
+                        />
+                      ) : (
+                        <span 
+                          className={cn("quran-arabic leading-[3]", arabicScriptClass(script))}
+                          style={{ fontSize: `${fontScale * 1.8}rem` }}
+                        >
+                          {verseTextByScript(v, script)}
+                        </span>
+                      )}
+                      <span className="reader-ayah-no text-lg">{formatArabicAyahNumber(v.verseNumber)}</span>
+                    </span>
+                  ))}
+                </div>
+              )}
+            </div>
+
+            <footer className="p-6 bg-black/5 border-t border-black/10 flex items-center justify-between text-[10px] font-bold uppercase tracking-[0.2em] text-muted-foreground">
+              <span>{readerChapter?.translatedName} • {readerChapter?.revelationPlace}</span>
+              <div className="flex items-center gap-2">
+                <Maximize2 size={12} className="text-primary" />
+                Immersive 13-Line Inspired Page Mode
+              </div>
+            </footer>
+          </div>
         </div>
-      ) : null}
+      )}
     </main>
   );
 }

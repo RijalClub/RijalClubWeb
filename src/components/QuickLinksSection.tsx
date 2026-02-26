@@ -22,8 +22,11 @@ import {
   PlayCircle,
   Radio,
   Youtube,
+  Globe,
+  ArrowRight
 } from "lucide-react";
 import { useMemo } from "react";
+import { cn } from "@/lib/utils";
 
 interface QuickLinksSectionProps {
   links: LinksConfig;
@@ -79,135 +82,141 @@ export function QuickLinksSection({
   }, [links.resourceSections, links.resources]);
 
   return (
-    <section className="panel reveal link-panel">
-      <div className="section-heading">
-        <h2>{links.heading}</h2>
-        <p>{links.description}</p>
+    <section className="panel p-6 flex flex-col gap-8 reveal">
+      <div className="flex flex-col gap-1">
+        <h2 className="font-bebas text-3xl tracking-wide text-white">{links.heading}</h2>
+        <p className="text-muted-foreground text-sm leading-relaxed">{links.description}</p>
       </div>
 
-      <div className="quick-links-grid">
+      <div className="grid gap-3">
         {links.quickLinks.map((link) => {
-          const Icon =
-            iconMap[link.icon as keyof typeof iconMap] ?? iconMap.default;
-
+          const Icon = iconMap[link.icon as keyof typeof iconMap] ?? iconMap.default;
           return (
             <a
               key={link.id}
               href={link.url}
               target="_blank"
               rel="noopener noreferrer"
-              className={link.featured ? "quick-link featured" : "quick-link"}
+              className={cn(
+                "group relative flex items-center gap-4 p-4 rounded-2xl border transition-all duration-300",
+                link.featured 
+                  ? "border-primary/30 bg-primary/5 hover:bg-primary/10 hover:border-primary/50" 
+                  : "border-white/5 bg-white/[0.02] hover:bg-white/5 hover:border-white/10"
+              )}
             >
-              <span className="quick-link-icon">
-                <Icon size={18} />
-              </span>
-              <span className="quick-link-content">
-                <strong>{link.title}</strong>
-                <small>{link.subtitle}</small>
-              </span>
-              <ExternalLink size={16} />
+              <div className={cn(
+                "flex items-center justify-center size-12 rounded-xl border transition-all duration-300",
+                link.featured ? "border-primary/20 bg-primary/10 text-primary" : "border-white/5 bg-white/5 text-muted-foreground group-hover:text-white"
+              )}>
+                <Icon size={20} />
+              </div>
+              <div className="flex flex-col flex-1">
+                <span className="text-sm font-bold text-white group-hover:text-primary transition-colors">{link.title}</span>
+                <span className="text-[11px] text-muted-foreground font-medium uppercase tracking-wider">{link.subtitle}</span>
+              </div>
+              <ArrowRight size={16} className="text-muted-foreground group-hover:text-primary group-hover:translate-x-1 transition-all" />
+              {link.featured && (
+                <div className="absolute top-0 right-0 p-1">
+                  <div className="size-1.5 rounded-full bg-primary shadow-[0_0_8px_rgba(var(--primary),0.5)]" />
+                </div>
+              )}
             </a>
           );
         })}
       </div>
 
-      <div className="social-strip">
+      <div className="flex flex-wrap gap-2">
         {links.socials.map((social) => (
           <a
             key={social.platform}
             href={social.url}
             target="_blank"
             rel="noopener noreferrer"
-            className="social-pill modern-pill"
+            className="rounded-full px-4 py-1.5 border border-white/10 bg-white/5 text-[10px] font-bold uppercase tracking-widest text-muted-foreground hover:text-white hover:bg-white/10 transition-all"
           >
-            <Badge variant="outline">{social.platform}</Badge>
+            {social.platform}
           </a>
         ))}
       </div>
 
-      {adhanAlert?.enabled ? (
-        <section className="adhan-alert-card">
-          <header className="adhan-alert-header">
-            <p className="kicker">
-              <Radio size={14} />
+      {adhanAlert?.enabled && (
+        <div className="rounded-2xl border border-white/5 bg-white/[0.01] p-5 flex flex-col gap-4">
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-2 text-[10px] uppercase tracking-[0.2em] text-lime font-bold">
+              <Radio size={12} className="animate-pulse" />
               {adhanAlert.title}
-            </p>
-            <label className="tick-option switch-row">
+            </div>
+            <div className="flex items-center gap-3 bg-white/5 rounded-full px-3 py-1 border border-white/5">
+              <span className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest">Alerts</span>
               <Switch
                 checked={isAdhanAlertEnabled}
                 onCheckedChange={setIsAdhanAlertEnabled}
+                className="data-[state=checked]:bg-primary scale-75"
               />
-              <span>Alert on</span>
-            </label>
-          </header>
-          <p className="source-note">{adhanAlert.description}</p>
-          {prayerTimeline ? (
-            <p className="source-note">
-              Next: <strong>{prayerTimeline.next.name}</strong> at{" "}
-              {formatPrayerClock(prayerTimeline.next.time24, use24HourClock)} in{" "}
-              <strong>
-                {formatCountdown(prayerTimeline.minutesUntilNext)}
-              </strong>
-            </p>
-          ) : null}
-          <div className="adhan-alert-actions">
-            <Button type="button" variant="outline" size="sm" onClick={toggleAudioPlayback}>
-              {isAudioPlaying ? <Pause size={14} /> : <Play size={14} />}
-              {isAudioPlaying ? "Pause adhan" : "Play adhan"}
-            </Button>
-            <small className="source-note">
-              Auto-play window: {adhanAlert.autoPlayWindowSeconds}s from each
-              prayer start.
-            </small>
+            </div>
           </div>
-          {statusMessage ? (
-            <p className="source-note">{statusMessage}</p>
-          ) : null}
-        </section>
-      ) : null}
+          
+          <div className="flex flex-col gap-1">
+            <p className="text-[11px] text-muted-foreground leading-relaxed">{adhanAlert.description}</p>
+            {prayerTimeline && (
+              <div className="text-[11px] font-bold text-white mt-1">
+                Next: <span className="text-primary">{prayerTimeline.next.name}</span> at {formatPrayerClock(prayerTimeline.next.time24, use24HourClock)} (In {formatCountdown(prayerTimeline.minutesUntilNext)})
+              </div>
+            )}
+          </div>
 
-      {links.resources && links.resources.length > 0 ? (
-        <section className="resource-sections">
+          <div className="flex items-center justify-between gap-4 pt-2">
+            <Button 
+              type="button" 
+              variant="outline" 
+              size="sm" 
+              onClick={toggleAudioPlayback}
+              className="rounded-full border-white/10 bg-white/5 hover:bg-white/10 text-[10px] font-bold uppercase tracking-widest h-8"
+            >
+              {isAudioPlaying ? <Pause size={12} className="mr-2" /> : <Play size={12} className="mr-2" />}
+              {isAudioPlaying ? "Stop Adhan" : "Test Adhan"}
+            </Button>
+            {statusMessage && <span className="text-[9px] text-primary font-bold uppercase tracking-tighter animate-pulse">{statusMessage}</span>}
+          </div>
+        </div>
+      )}
+
+      {(links.resourceSections ?? []).length > 0 && (
+        <div className="flex flex-col gap-6 pt-2">
           {(links.resourceSections ?? []).map((section) => {
             const items = groupedResources.get(section.id) ?? [];
-            if (items.length === 0) {
-              return null;
-            }
-
+            if (items.length === 0) return null;
             const Icon = resourceSectionIconMap[section.icon] ?? BookOpen;
             return (
-              <article key={section.id} className="resource-group">
-                <p className="kicker">
-                  <Icon size={14} />
+              <div key={section.id} className="flex flex-col gap-4">
+                <div className="flex items-center gap-2 text-[10px] uppercase tracking-[0.2em] text-muted-foreground font-bold border-b border-white/5 pb-2">
+                  <Icon size={12} className="text-primary/60" />
                   {section.title}
-                </p>
-                {section.description ? (
-                  <p className="source-note">{section.description}</p>
-                ) : null}
-                <div className="resource-grid">
+                </div>
+                <div className="grid gap-2">
                   {items.map((resource) => (
                     <a
                       key={resource.id}
                       href={resource.url}
                       target="_blank"
                       rel="noopener noreferrer"
-                      className="resource-link"
+                      className="group flex items-center justify-between p-3 rounded-xl border border-white/5 bg-white/[0.01] hover:bg-white/5 hover:border-white/10 transition-all"
                     >
-                      <span>
-                        <strong>{resource.title}</strong>
-                        <small>{resource.subtitle}</small>
-                      </span>
-                      <Badge variant="outline" className="resource-link-badge">
-                        <ExternalLink size={14} />
-                      </Badge>
+                      <div className="flex flex-col">
+                        <span className="text-xs font-bold text-white group-hover:text-primary transition-colors">{resource.title}</span>
+                        <span className="text-[10px] text-muted-foreground font-medium">{resource.subtitle}</span>
+                      </div>
+                      <div className="size-7 rounded-lg bg-white/5 flex items-center justify-center text-muted-foreground group-hover:text-white group-hover:bg-primary/20 transition-all">
+                        <ExternalLink size={12} />
+                      </div>
                     </a>
                   ))}
                 </div>
-              </article>
+              </div>
             );
           })}
-        </section>
-      ) : null}
+        </div>
+      )}
     </section>
   );
 }
