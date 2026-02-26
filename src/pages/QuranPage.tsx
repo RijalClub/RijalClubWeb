@@ -1,4 +1,5 @@
 import './quran.css'
+import { Button } from "@/components/ui/button";
 import {
   formatArabicAyahNumber,
   loadChapterAudioUrl,
@@ -831,23 +832,27 @@ export function QuranPage({ config, cache }: QuranPageProps) {
                 <span>Light mode</span>
               </label>
 
-              <button
+              <Button
                 type="button"
                 className="icon-btn"
                 onClick={openReaderMode}
+                variant="outline"
+                size="sm"
               >
                 <ScanText size={14} />
                 Arabic reader mode
-              </button>
+              </Button>
 
-              <button
+              <Button
                 type="button"
                 className="icon-btn"
                 onClick={resetQuranPreferences}
+                variant="outline"
+                size="sm"
               >
                 <RotateCcw size={14} />
                 Reset Quran
-              </button>
+              </Button>
 
               <span className="state-text">
                 {selectedTranslationIds.length}/
@@ -943,14 +948,16 @@ export function QuranPage({ config, cache }: QuranPageProps) {
 
             <div className="translation-chip-row">
               {selectedTranslationResources.map((translation) => (
-                <button
+                <Button
                   key={translation.id}
                   type="button"
                   className="social-pill"
                   onClick={() => toggleTranslation(translation.id)}
+                  variant="outline"
+                  size="sm"
                 >
                   {translation.name}
-                </button>
+                </Button>
               ))}
             </div>
           </>
@@ -1064,23 +1071,27 @@ export function QuranPage({ config, cache }: QuranPageProps) {
                 </h2>
               </div>
               <div className="reader-header-actions">
-                <button
+                <Button
                   type="button"
                   className={lightMode ? "icon-btn active" : "icon-btn"}
                   onClick={() => setLightMode((value) => !value)}
+                  variant="outline"
+                  size="sm"
                 >
                   <Sun size={14} />
                   Light mode
-                </button>
-                <button
+                </Button>
+                <Button
                   type="button"
                   className="icon-btn"
                   onClick={() => setIsReaderModeOpen(false)}
                   aria-label="Close Arabic reader mode"
+                  variant="outline"
+                  size="sm"
                 >
                   <X size={14} />
                   Close
-                </button>
+                </Button>
               </div>
             </header>
 
@@ -1135,24 +1146,28 @@ export function QuranPage({ config, cache }: QuranPageProps) {
               </label>
 
               <div className="reader-nav-row">
-                <button
+                <Button
                   type="button"
                   className="icon-btn"
                   disabled={readerPage <= 1}
                   onClick={() => goToReaderPage(readerPage - 1, "prev")}
+                  variant="outline"
+                  size="sm"
                 >
                   <ChevronLeft size={14} />
                   Previous
-                </button>
-                <button
+                </Button>
+                <Button
                   type="button"
                   className="icon-btn"
                   disabled={readerPage >= maxPage}
                   onClick={() => goToReaderPage(readerPage + 1, "next")}
+                  variant="outline"
+                  size="sm"
                 >
                   Next
                   <ChevronRight size={14} />
-                </button>
+                </Button>
               </div>
             </div>
 

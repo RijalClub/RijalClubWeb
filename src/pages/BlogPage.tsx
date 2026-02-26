@@ -1,6 +1,8 @@
-import './blog.css'
+import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
 import type { BlogConfig } from "@/types/content";
 import { CalendarDays, HeartPulse, Rss } from "lucide-react";
+import "./blog.css";
 
 interface BlogPageProps {
   blog: BlogConfig;
@@ -39,9 +41,9 @@ export function BlogPage({ blog }: BlogPageProps) {
         </p>
         <div className="fitness-jump-row">
           {blog.posts.map((post) => (
-            <a key={post.id} href={`#${post.id}`} className="social-pill">
-              {post.title}
-            </a>
+            <Button key={post.id} asChild variant="outline" size="sm">
+              <a href={`#${post.id}`}>{post.title}</a>
+            </Button>
           ))}
         </div>
       </section>
@@ -65,9 +67,9 @@ export function BlogPage({ blog }: BlogPageProps) {
                 </p>
                 <div className="fitness-tag-row">
                   {post.tags.map((tag) => (
-                    <span key={`${post.id}-${tag}`} className="tag">
+                    <Badge key={`${post.id}-${tag}`} variant="outline" className="tag">
                       {tag}
-                    </span>
+                    </Badge>
                   ))}
                 </div>
               </div>

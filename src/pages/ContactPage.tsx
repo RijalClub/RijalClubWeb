@@ -1,3 +1,6 @@
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Textarea } from "@/components/ui/textarea";
 import type { ContactConfig } from "@/types/content";
 import emailjs from "@emailjs/browser";
 import { LoaderCircle, Mail, Send } from "lucide-react";
@@ -134,7 +137,7 @@ export function ContactPage({ config }: ContactPageProps) {
           <div className="contact-form-grid">
             <label className="select-wrap" htmlFor="contact-name">
               Name
-              <input
+              <Input
                 id="contact-name"
                 type="text"
                 value={values.name}
@@ -148,7 +151,7 @@ export function ContactPage({ config }: ContactPageProps) {
 
             <label className="select-wrap" htmlFor="contact-email">
               Email
-              <input
+              <Input
                 id="contact-email"
                 type="email"
                 value={values.email}
@@ -163,7 +166,7 @@ export function ContactPage({ config }: ContactPageProps) {
 
           <label className="select-wrap" htmlFor="contact-subject">
             Subject
-            <input
+            <Input
               id="contact-subject"
               type="text"
               value={values.subject}
@@ -176,7 +179,7 @@ export function ContactPage({ config }: ContactPageProps) {
 
           <label className="select-wrap" htmlFor="contact-message">
             Message
-            <textarea
+            <Textarea
               id="contact-message"
               value={values.message}
               onChange={(event) => handleChange("message", event.target.value)}
@@ -188,7 +191,7 @@ export function ContactPage({ config }: ContactPageProps) {
           </label>
 
           <div className="contact-submit-row">
-            <button
+            <Button
               type="submit"
               className="btn btn-solid"
               disabled={isSubmitting || !emailReady}
@@ -199,7 +202,7 @@ export function ContactPage({ config }: ContactPageProps) {
                 <Send size={14} />
               )}
               {isSubmitting ? "Sending…" : "Send message"}
-            </button>
+            </Button>
             <small className="source-note">Powered by EmailJS</small>
           </div>
 

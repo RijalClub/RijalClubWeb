@@ -1,7 +1,11 @@
 import { AdhanAlertProvider } from "@/components/AdhanAlertProvider";
 import { SiteShell } from "@/components/SiteShell";
+import { Button } from "@/components/ui/button";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Progress } from "@/components/ui/progress";
 import { type SiteContent } from "@/lib/content";
 import { HomePage } from "@/pages/HomePage";
+import { LoaderCircle } from "lucide-react";
 import { lazy, Suspense, useEffect, useState } from "react";
 import { BrowserRouter, Navigate, Route, Routes } from "react-router-dom";
 import { contentPreload } from "./main";
@@ -23,15 +27,46 @@ const StorePage = lazy(() =>
 );
 
 function LoadingScreen() {
+  const [progress, setProgress] = useState(14);
+
+  useEffect(() => {
+    const interval = window.setInterval(() => {
+      setProgress((value) => {
+        if (value >= 94) {
+          return value;
+        }
+
+        const increment = Math.max(1, Math.round((100 - value) * 0.12));
+        return Math.min(94, value + increment);
+      });
+    }, 260);
+
+    return () => window.clearInterval(interval);
+  }, []);
+
   return (
     <div className="status-screen">
-      <div className="status-card panel">
-        <h1>Loading The Rijal Club</h1>
-        <p>
-          Pulling profile, links, announcements, prayer times, Quran, library,
-          contact, store, and cache config.
-        </p>
-      </div>
+      <Card className="status-card panel status-loading-card border-white/10 bg-black/40">
+        <CardHeader>
+          <CardTitle>Loading The Rijal Club</CardTitle>
+        </CardHeader>
+        <CardContent className="grid gap-4 pt-0">
+          <div className="loading-visual" aria-hidden="true">
+            <span className="loading-ring" />
+            <LoaderCircle className="loading-spinner" />
+          </div>
+          <div className="loading-progress-wrap">
+            <Progress value={progress} className="loading-progress" />
+            <p className="source-note loading-progress-meta">
+              {Math.round(progress)}% loaded
+            </p>
+          </div>
+          <p>
+            Pulling profile, links, announcements, prayer times, Quran, library,
+            contact, store, and cache config.
+          </p>
+        </CardContent>
+      </Card>
     </div>
   );
 }
@@ -39,17 +74,17 @@ function LoadingScreen() {
 function ErrorScreen({ message }: { message: string }) {
   return (
     <div className="status-screen">
-      <div className="status-card panel">
-        <h1>Config load error</h1>
-        <p>{message}</p>
-        <button
-          type="button"
-          className="btn btn-solid"
-          onClick={() => window.location.reload()}
-        >
-          Reload
-        </button>
-      </div>
+      <Card className="status-card panel border-rose-500/30 bg-black/45">
+        <CardHeader>
+          <CardTitle>Config load error</CardTitle>
+        </CardHeader>
+        <CardContent className="grid gap-4 pt-0">
+          <p>{message}</p>
+          <Button type="button" onClick={() => window.location.reload()}>
+            Reload
+          </Button>
+        </CardContent>
+      </Card>
     </div>
   );
 }

@@ -1,5 +1,6 @@
 import { fetchJsonWithCache, fetchTextWithCache } from "@/lib/fetchCache";
 import type { AnnouncementsConfig, TikTokFallbackPost } from "@/types/content";
+import { Button } from "@/components/ui/button";
 import {
   ChevronLeft,
   ChevronRight,
@@ -481,30 +482,36 @@ export function TikTokAnnouncementsSection({
               {targetCount > 1 ? "s" : ""} from TikTok
             </p>
             <div className="tiktok-carousel-nav">
-              <button
+              <Button
                 type="button"
                 className="icon-btn"
                 onClick={() => setRefreshNonce((value) => value + 1)}
+                variant="outline"
+                size="sm"
               >
                 <RefreshCw size={14} />
                 Refresh
-              </button>
-              <button
+              </Button>
+              <Button
                 type="button"
                 className="icon-btn"
                 onClick={() => onSlide("prev")}
                 aria-label="Previous posts"
+                variant="outline"
+                size="icon-sm"
               >
                 <ChevronLeft size={14} />
-              </button>
-              <button
+              </Button>
+              <Button
                 type="button"
                 className="icon-btn"
                 onClick={() => onSlide("next")}
                 aria-label="Next posts"
+                variant="outline"
+                size="icon-sm"
               >
                 <ChevronRight size={14} />
-              </button>
+              </Button>
             </div>
           </div>
 
@@ -590,14 +597,16 @@ export function TikTokAnnouncementsSection({
                 <p className="kicker">TikTok Update</p>
                 <h3>{activeCard.title}</h3>
               </div>
-              <button
+              <Button
                 type="button"
                 className="icon-btn"
                 onClick={() => setActiveCard(null)}
+                variant="outline"
+                size="sm"
               >
                 <X size={14} />
                 Close
-              </button>
+              </Button>
             </header>
 
             <p className="content-modal-copy">{activeCard.description}</p>
@@ -623,15 +632,16 @@ export function TikTokAnnouncementsSection({
             ) : null}
 
             <div className="content-modal-actions">
-              <a
-                href={activeCard.videoUrl}
-                target="_blank"
-                rel="noopener noreferrer"
-                className="btn btn-solid"
-              >
-                Open On TikTok
-                <ExternalLink size={13} />
-              </a>
+              <Button asChild className="btn btn-solid">
+                <a
+                  href={activeCard.videoUrl}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                >
+                  Open On TikTok
+                  <ExternalLink size={13} />
+                </a>
+              </Button>
               <p className="source-note">
                 Auto-loaded from TikTok profile + oEmbed.
               </p>

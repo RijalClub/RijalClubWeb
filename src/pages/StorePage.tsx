@@ -1,3 +1,5 @@
+import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
 import type {
   MediaAsset,
   ProfileConfig,
@@ -145,14 +147,15 @@ export function StorePage({ store, profile }: StorePageProps) {
             {store.isOpen ? "Store is open" : store.closedMessage}
           </p>
           {!store.isOpen ? (
-            <a
-              href={profile.secondaryCta.url}
-              target="_blank"
-              rel="noopener noreferrer"
-              className="btn btn-ghost"
-            >
-              Stay Updated
-            </a>
+            <Button asChild variant="outline" className="btn btn-ghost">
+              <a
+                href={profile.secondaryCta.url}
+                target="_blank"
+                rel="noopener noreferrer"
+              >
+                Stay Updated
+              </a>
+            </Button>
           ) : null}
         </section>
 
@@ -217,7 +220,9 @@ export function StorePage({ store, profile }: StorePageProps) {
                     <div className="store-card-header">
                       <h3>{product.title}</h3>
                       {product.badge ? (
-                        <span className="tag">{product.badge}</span>
+                        <Badge variant="outline" className="tag">
+                          {product.badge}
+                        </Badge>
                       ) : null}
                     </div>
                     <p>{product.description}</p>
@@ -253,14 +258,16 @@ export function StorePage({ store, profile }: StorePageProps) {
                 </p>
                 <h3>{activeProduct.title}</h3>
               </div>
-              <button
+              <Button
                 type="button"
                 className="icon-btn"
                 onClick={() => setActiveProduct(null)}
+                variant="outline"
+                size="sm"
               >
                 <X size={14} />
                 Close
-              </button>
+              </Button>
             </header>
 
             <p className="content-modal-copy">{activeProduct.description}</p>
@@ -328,7 +335,7 @@ export function StorePage({ store, profile }: StorePageProps) {
             ) : null}
 
             <div className="content-modal-actions">
-              <button
+              <Button
                 type="button"
                 className="btn btn-solid"
                 disabled={
@@ -341,7 +348,7 @@ export function StorePage({ store, profile }: StorePageProps) {
                 }}
               >
                 {busyProductId === activeProduct.id ? "Loading..." : "Buy Now"}
-              </button>
+              </Button>
               <p className="source-note">
                 Recommended media ratio: 16:9 (for example 1600x900).
               </p>

@@ -1,4 +1,7 @@
 import { useAdhanAlert } from "@/components/AdhanAlertProvider";
+import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
+import { Switch } from "@/components/ui/switch";
 import {
   formatCountdown,
   formatPrayerClock,
@@ -115,9 +118,9 @@ export function QuickLinksSection({
             href={social.url}
             target="_blank"
             rel="noopener noreferrer"
-            className="social-pill"
+            className="social-pill modern-pill"
           >
-            {social.platform}
+            <Badge variant="outline">{social.platform}</Badge>
           </a>
         ))}
       </div>
@@ -129,13 +132,10 @@ export function QuickLinksSection({
               <Radio size={14} />
               {adhanAlert.title}
             </p>
-            <label className="tick-option">
-              <input
-                type="checkbox"
+            <label className="tick-option switch-row">
+              <Switch
                 checked={isAdhanAlertEnabled}
-                onChange={(event) =>
-                  setIsAdhanAlertEnabled(event.target.checked)
-                }
+                onCheckedChange={setIsAdhanAlertEnabled}
               />
               <span>Alert on</span>
             </label>
@@ -151,14 +151,10 @@ export function QuickLinksSection({
             </p>
           ) : null}
           <div className="adhan-alert-actions">
-            <button
-              type="button"
-              className="icon-btn"
-              onClick={toggleAudioPlayback}
-            >
+            <Button type="button" variant="outline" size="sm" onClick={toggleAudioPlayback}>
               {isAudioPlaying ? <Pause size={14} /> : <Play size={14} />}
               {isAudioPlaying ? "Pause adhan" : "Play adhan"}
-            </button>
+            </Button>
             <small className="source-note">
               Auto-play window: {adhanAlert.autoPlayWindowSeconds}s from each
               prayer start.
@@ -201,7 +197,9 @@ export function QuickLinksSection({
                         <strong>{resource.title}</strong>
                         <small>{resource.subtitle}</small>
                       </span>
-                      <ExternalLink size={15} />
+                      <Badge variant="outline" className="resource-link-badge">
+                        <ExternalLink size={14} />
+                      </Badge>
                     </a>
                   ))}
                 </div>

@@ -1,3 +1,4 @@
+import { Button } from "@/components/ui/button";
 import {
   buildPrayerTimeline,
   formatCountdown,
@@ -433,42 +434,48 @@ export function PrayerTimesWidget({
       <div className="section-heading prayer-heading">
         <h2>{config.widgetTitle}</h2>
         <div className="prayer-controls">
-          <button
+          <Button
             type="button"
-            className="icon-btn"
+            variant="outline"
+            size="sm"
             onClick={() => void reloadTimes()}
             aria-label="Refresh prayer times"
           >
             <RefreshCw size={14} />
-          </button>
-          <button
+          </Button>
+          <Button
             type="button"
-            className="icon-btn"
+            variant="outline"
+            size="sm"
             onClick={handleUseLocation}
             disabled={isLocating}
           >
             <LocateFixed size={14} />
             {isLocating ? "Locating…" : "Use location"}
-          </button>
+          </Button>
           <div className="clock-toggle" role="group" aria-label="Time format">
-            <button
+            <Button
               type="button"
               className={
                 use24Hour ? "clock-toggle-btn" : "clock-toggle-btn active"
               }
               onClick={() => setUse24Hour(false)}
+              variant="ghost"
+              size="sm"
             >
               AM/PM
-            </button>
-            <button
+            </Button>
+            <Button
               type="button"
               className={
                 use24Hour ? "clock-toggle-btn active" : "clock-toggle-btn"
               }
               onClick={() => setUse24Hour(true)}
+              variant="ghost"
+              size="sm"
             >
               24h
-            </button>
+            </Button>
           </div>
         </div>
       </div>
@@ -494,7 +501,7 @@ export function PrayerTimesWidget({
       <div className="prayer-option-row">
         <div className="madhab-toggle" role="group" aria-label="Madhab">
           <span>Madhab</span>
-          <button
+          <Button
             type="button"
             className={
               selectedMadhab === "shafi" ? "madhab-btn active" : "madhab-btn"
@@ -505,10 +512,12 @@ export function PrayerTimesWidget({
                 [selectedLocation.id]: "shafi",
               }));
             }}
+            variant="ghost"
+            size="sm"
           >
             Shafi
-          </button>
-          <button
+          </Button>
+          <Button
             type="button"
             className={
               selectedMadhab === "hanafi" ? "madhab-btn active" : "madhab-btn"
@@ -519,18 +528,22 @@ export function PrayerTimesWidget({
                 [selectedLocation.id]: "hanafi",
               }));
             }}
+            variant="ghost"
+            size="sm"
           >
             Hanafi
-          </button>
+          </Button>
         </div>
-        <button
+        <Button
           type="button"
           className="icon-btn prayer-reset-btn"
           onClick={handleResetPreferences}
+          variant="outline"
+          size="sm"
         >
           <RotateCcw size={13} />
           Reset prefs
-        </button>
+        </Button>
       </div>
 
       {isLoading ? <p className="state-text">Loading prayer times…</p> : null}
@@ -566,7 +579,7 @@ export function PrayerTimesWidget({
               </p>
               <div className="prayer-week-tabs">
                 {weekSchedule.map((day) => (
-                  <button
+                  <Button
                     key={day.date}
                     type="button"
                     className={
@@ -575,9 +588,11 @@ export function PrayerTimesWidget({
                         : "prayer-week-chip"
                     }
                     onClick={() => setSelectedWeekDate(day.date)}
+                    variant="ghost"
+                    size="sm"
                   >
                     {formatPrayerDateLabel(day.date)}
-                  </button>
+                  </Button>
                 ))}
               </div>
               {selectedWeekDay ? (

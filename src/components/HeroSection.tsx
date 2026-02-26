@@ -1,5 +1,8 @@
+import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
 import type { ProfileConfig } from "@/types/content";
 import { ArrowUpRight, Sparkles } from "lucide-react";
+import { Link } from "react-router-dom";
 
 interface HeroSectionProps {
   profile: ProfileConfig;
@@ -19,28 +22,27 @@ export function HeroSection({ profile }: HeroSectionProps) {
 
         <div className="value-chips">
           {profile.values.map((value) => (
-            <span key={value}>{value}</span>
+            <Badge key={value} variant="secondary">
+              {value}
+            </Badge>
           ))}
         </div>
 
         <div className="hero-actions">
-          <a
-            href={profile.primaryCta.url}
-            target="_blank"
-            rel="noopener noreferrer"
-            className="btn btn-solid"
-          >
-            {profile.primaryCta.label}
-            <ArrowUpRight size={16} />
-          </a>
-          <a
-            href={profile.secondaryCta.url}
-            target="_blank"
-            rel="noopener noreferrer"
-            className="btn btn-ghost"
-          >
-            {profile.secondaryCta.label}
-          </a>
+          <Button asChild className="btn btn-solid">
+            <a href={profile.primaryCta.url} target="_blank" rel="noopener noreferrer">
+              {profile.primaryCta.label}
+              <ArrowUpRight size={16} />
+            </a>
+          </Button>
+          <Button asChild variant="outline" className="btn btn-ghost">
+            <a href={profile.secondaryCta.url} target="_blank" rel="noopener noreferrer">
+              {profile.secondaryCta.label}
+            </a>
+          </Button>
+          <Button asChild variant="ghost" className="text-slate-200 hover:text-white">
+            <Link to="/blog">Latest updates</Link>
+          </Button>
         </div>
 
         <div className="hero-stats">

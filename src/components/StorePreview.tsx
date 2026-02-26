@@ -1,3 +1,4 @@
+import { Button } from "@/components/ui/button";
 import type { MediaAsset, StoreConfig, StoreProduct } from "@/types/content";
 import { ExternalLink, Images, X } from "lucide-react";
 import { useEffect, useState } from "react";
@@ -138,9 +139,9 @@ export function StorePreview({ store }: StorePreviewProps) {
         </div>
 
         <div className="store-action-row">
-          <Link to="/store" className="btn btn-solid">
-            Open Store Page
-          </Link>
+          <Button asChild className="btn btn-solid">
+            <Link to="/store">Open Store Page</Link>
+          </Button>
         </div>
       </section>
 
@@ -162,14 +163,16 @@ export function StorePreview({ store }: StorePreviewProps) {
                 <p className="kicker">Merchandise</p>
                 <h3>{activeProduct.title}</h3>
               </div>
-              <button
+              <Button
                 type="button"
                 className="icon-btn"
                 onClick={() => setActiveProduct(null)}
+                variant="outline"
+                size="sm"
               >
                 <X size={14} />
                 Close
-              </button>
+              </Button>
             </header>
 
             <p className="content-modal-copy">{activeProduct.description}</p>
@@ -237,14 +240,12 @@ export function StorePreview({ store }: StorePreviewProps) {
             ) : null}
 
             <div className="content-modal-actions">
-              <Link
-                to="/store"
-                className="btn btn-solid"
-                onClick={() => setActiveProduct(null)}
-              >
-                Go To Store
-                <ExternalLink size={13} />
-              </Link>
+              <Button asChild className="btn btn-solid">
+                <Link to="/store" onClick={() => setActiveProduct(null)}>
+                  Go To Store
+                  <ExternalLink size={13} />
+                </Link>
+              </Button>
               <p className="source-note">
                 Recommended media ratio: 16:9 (for example 1600x900).
               </p>

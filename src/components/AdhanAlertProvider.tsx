@@ -3,6 +3,8 @@ import {
   pickRecommendedLocation,
   type PrayerTimesSnapshot,
 } from "@/lib/prayer";
+import { Button } from "@/components/ui/button";
+import { Switch } from "@/components/ui/switch";
 import type {
   AdhanMadhab,
   LinksConfig,
@@ -823,44 +825,47 @@ export function AdhanAlertProvider({
               {adhanAlert?.title ?? "Adhan Alert"}
             </p>
             <div className="adhan-mini-top-actions">
-              <label className="tick-option">
-                <input
-                  type="checkbox"
+              <label className="tick-option switch-row">
+                <Switch
                   checked={isAdhanAlertEnabled}
-                  onChange={(event) =>
-                    setIsAdhanAlertEnabled(event.target.checked)
-                  }
+                  onCheckedChange={setIsAdhanAlertEnabled}
                 />
                 <span>Alert on</span>
               </label>
-              <button
+              <Button
                 type="button"
                 className="icon-btn"
                 onClick={dismissCurrentAdhanMoment}
                 aria-label="Dismiss current adhan"
+                variant="outline"
+                size="sm"
               >
                 <X size={14} />
                 Close
-              </button>
+              </Button>
             </div>
           </header>
           <div className="adhan-mini-actions">
-            <button
+            <Button
               type="button"
               className="icon-btn"
               onClick={toggleAudioPlayback}
+              variant="outline"
+              size="sm"
             >
               {isAudioPlaying ? <Pause size={14} /> : <Play size={14} />}
               {isAudioPlaying ? "Pause" : "Play"}
-            </button>
-            <button
+            </Button>
+            <Button
               type="button"
               className={`icon-btn ${isMuted ? "active" : ""}`}
               onClick={toggleMuted}
+              variant="outline"
+              size="sm"
             >
               {isMuted ? <VolumeX size={14} /> : <Volume2 size={14} />}
               {isMuted ? "Muted" : "Mute"}
-            </button>
+            </Button>
           </div>
           {statusMessage ? (
             <p className="source-note adhan-mini-status">{statusMessage}</p>

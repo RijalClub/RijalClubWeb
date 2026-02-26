@@ -1,3 +1,5 @@
+import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
 import type {
   AnnouncementItem,
   AnnouncementsConfig,
@@ -150,7 +152,9 @@ export function AnnouncementCard({ item, onOpen }: AnnouncementCardProps) {
     >
       <div className="announcement-meta">
         <span>{formatAnnouncementDate(item.publishedAt)}</span>
-        <span className="tag">{item.type}</span>
+        <Badge variant="outline" className="tag">
+          {item.type}
+        </Badge>
       </div>
       <h3>{item.title}</h3>
       <p>{item.body}</p>
@@ -241,10 +245,10 @@ export function AnnouncementDetailModal({
             <p className="kicker">{formatAnnouncementDate(item.publishedAt)}</p>
             <h3>{item.title}</h3>
           </div>
-          <button type="button" className="icon-btn" onClick={onClose}>
+          <Button type="button" variant="outline" size="sm" onClick={onClose}>
             <X size={14} />
             Close
-          </button>
+          </Button>
         </header>
 
         <p className="content-modal-copy">{item.body}</p>
@@ -289,15 +293,12 @@ export function AnnouncementDetailModal({
 
         <div className="content-modal-actions">
           {item.ctaLabel && item.ctaUrl ? (
-            <a
-              href={item.ctaUrl}
-              target="_blank"
-              rel="noopener noreferrer"
-              className="btn btn-solid"
-            >
-              {item.ctaLabel}
-              <ExternalLink size={13} />
-            </a>
+            <Button asChild className="btn btn-solid">
+              <a href={item.ctaUrl} target="_blank" rel="noopener noreferrer">
+                {item.ctaLabel}
+                <ExternalLink size={13} />
+              </a>
+            </Button>
           ) : null}
           <p className="source-note">
             Recommended media ratio: 16:9 (for example 1600x900).

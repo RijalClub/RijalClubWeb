@@ -1,4 +1,4 @@
-import './library.css'
+import { Button } from "@/components/ui/button";
 import type { HadithCollectionConfig, HadithConfig } from "@/types/content";
 import { BookMarked, FileText, SquareArrowOutUpRight, X } from "lucide-react";
 import { useEffect, useMemo, useState } from "react";
@@ -256,19 +256,21 @@ export function LibraryPage({ config }: LibraryPageProps) {
           />
           <section className="library-pdf-modal-panel panel">
             <header className="library-pdf-modal-header">
-              <p className="kicker">
-                <FileText size={14} />
-                {selectedCollection.title}
-              </p>
-              <button
+                <p className="kicker">
+                  <FileText size={14} />
+                  {selectedCollection.title}
+                </p>
+              <Button
                 type="button"
                 className="icon-btn"
                 onClick={() => setIsPdfModalOpen(false)}
                 aria-label="Close PDF reader"
+                variant="outline"
+                size="sm"
               >
                 <X size={15} />
                 Close
-              </button>
+              </Button>
             </header>
             <iframe
               src={selectedCollection.pdfUrl}
