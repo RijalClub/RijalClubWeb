@@ -1,5 +1,3 @@
-import { z } from "zod";
-
 import type {
   AnnouncementsConfig,
   BlogConfig,
@@ -12,6 +10,7 @@ import type {
   QuranConfig,
   StoreConfig,
 } from "@/types/content";
+import { z } from "zod";
 
 const rawContentBaseUrl = import.meta.env.VITE_CONTENT_BASE_URL;
 const contentBaseUrl = (

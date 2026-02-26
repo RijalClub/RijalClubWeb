@@ -1,3 +1,5 @@
+import { fetchJsonWithCache, fetchTextWithCache } from "@/lib/fetchCache";
+import type { AnnouncementsConfig, TikTokFallbackPost } from "@/types/content";
 import {
   ChevronLeft,
   ChevronRight,
@@ -8,9 +10,6 @@ import {
 } from "lucide-react";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { Link } from "react-router-dom";
-
-import { fetchJsonWithCache, fetchTextWithCache } from "@/lib/fetchCache";
-import type { AnnouncementsConfig, TikTokFallbackPost } from "@/types/content";
 
 interface TikTokAnnouncementsSectionProps {
   announcements: AnnouncementsConfig;

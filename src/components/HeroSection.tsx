@@ -1,6 +1,5 @@
-import { ArrowUpRight, Sparkles } from "lucide-react";
-
 import type { ProfileConfig } from "@/types/content";
+import { ArrowUpRight, Sparkles } from "lucide-react";
 
 interface HeroSectionProps {
   profile: ProfileConfig;

@@ -1,3 +1,4 @@
+import './library.css'
 import type { HadithCollectionConfig, HadithConfig } from "@/types/content";
 import { BookMarked, FileText, SquareArrowOutUpRight, X } from "lucide-react";
 import { useEffect, useMemo, useState } from "react";

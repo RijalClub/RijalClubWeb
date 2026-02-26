@@ -1,3 +1,4 @@
+import './blog.css'
 import type { BlogConfig } from "@/types/content";
 import { CalendarDays, HeartPulse, Rss } from "lucide-react";
 

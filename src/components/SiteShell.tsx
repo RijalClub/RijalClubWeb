@@ -1,45 +1,44 @@
-import { Menu, X } from 'lucide-react'
-import { useEffect, useMemo, useState, type ReactNode } from 'react'
-import { Link, NavLink, useLocation } from 'react-router-dom'
-
-import type { ProfileConfig } from '@/types/content'
+import type { ProfileConfig } from "@/types/content";
+import { Menu, X } from "lucide-react";
+import { useEffect, useMemo, useState, type ReactNode } from "react";
+import { Link, NavLink, useLocation } from "react-router-dom";
 
 interface SiteShellProps {
-  profile: ProfileConfig
-  showStore: boolean
-  children: ReactNode
+  profile: ProfileConfig;
+  showStore: boolean;
+  children: ReactNode;
 }
 
 export function SiteShell({ profile, showStore, children }: SiteShellProps) {
-  const currentYear = new Date().getFullYear()
-  const routeLocation = useLocation()
-  const [menuOpen, setMenuOpen] = useState(false)
+  const currentYear = new Date().getFullYear();
+  const routeLocation = useLocation();
+  const [menuOpen, setMenuOpen] = useState(false);
   const navItems = useMemo(
     () => [
-      { to: '/', label: 'Home', end: true },
-      { to: '/blog', label: 'Blog' },
-      { to: '/quran', label: 'Quran' },
-      { to: '/library', label: 'Library' },
-      ...(showStore ? [{ to: '/store', label: 'Store' }] : []),
-      { to: '/contact', label: 'Contact' },
+      { to: "/", label: "Home", end: true },
+      { to: "/blog", label: "Blog" },
+      { to: "/quran", label: "Quran" },
+      { to: "/library", label: "Library" },
+      ...(showStore ? [{ to: "/store", label: "Store" }] : []),
+      { to: "/contact", label: "Contact" },
     ],
     [showStore],
-  )
+  );
 
   useEffect(() => {
-    setMenuOpen(false)
-  }, [routeLocation.pathname])
+    setMenuOpen(false);
+  }, [routeLocation.pathname]);
 
   useEffect(() => {
     const onResize = (): void => {
       if (window.innerWidth > 700) {
-        setMenuOpen(false)
+        setMenuOpen(false);
       }
-    }
+    };
 
-    window.addEventListener('resize', onResize)
-    return () => window.removeEventListener('resize', onResize)
-  }, [])
+    window.addEventListener("resize", onResize);
+    return () => window.removeEventListener("resize", onResize);
+  }, []);
 
   return (
     <div className="site-shell">
@@ -62,23 +61,27 @@ export function SiteShell({ profile, showStore, children }: SiteShellProps) {
           <button
             type="button"
             className="icon-btn menu-toggle"
-            aria-label={menuOpen ? 'Close menu' : 'Open menu'}
+            aria-label={menuOpen ? "Close menu" : "Open menu"}
             aria-expanded={menuOpen}
             aria-controls="site-main-nav"
             onClick={() => setMenuOpen((value) => !value)}
           >
             {menuOpen ? <X size={15} /> : <Menu size={15} />}
-            {menuOpen ? 'Close' : 'Menu'}
+            {menuOpen ? "Close" : "Menu"}
           </button>
         </div>
 
-        <nav className={`site-nav ${menuOpen ? 'open' : ''}`} id="site-main-nav" aria-label="Main">
+        <nav
+          className={`site-nav ${menuOpen ? "open" : ""}`}
+          id="site-main-nav"
+          aria-label="Main"
+        >
           {navItems.map((item) => (
             <NavLink
               key={item.to}
               to={item.to}
               end={item.end}
-              className={({ isActive }) => (isActive ? 'active' : undefined)}
+              className={({ isActive }) => (isActive ? "active" : undefined)}
               onClick={() => setMenuOpen(false)}
             >
               {item.label}
@@ -94,5 +97,5 @@ export function SiteShell({ profile, showStore, children }: SiteShellProps) {
         <p>Made with Love ♥ by Rijal Devs © {currentYear}</p>
       </footer>
     </div>
-  )
+  );
 }

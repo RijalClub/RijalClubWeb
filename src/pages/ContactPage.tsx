@@ -1,8 +1,8 @@
+import type { ContactConfig } from "@/types/content";
 import emailjs from "@emailjs/browser";
 import { LoaderCircle, Mail, Send } from "lucide-react";
 import { type SubmitEvent, useMemo, useState } from "react";
-
-import type { ContactConfig } from "@/types/content";
+import "./contact.css";
 
 interface ContactPageProps {
   config: ContactConfig;

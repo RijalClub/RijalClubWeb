@@ -1,27 +1,30 @@
+import { useAdhanAlert } from "@/components/AdhanAlertProvider";
+import {
+  formatCountdown,
+  formatPrayerClock,
+  type PrayerTimeline,
+} from "@/lib/prayer";
+import type { LinksConfig, ResourceSectionIcon } from "@/types/content";
 import {
   BookOpen,
   Brain,
-  Handshake,
-  Pause,
-  Play,
   ExternalLink,
   HandHeart,
+  Handshake,
   Instagram,
   Link as LinkIcon,
   MessageCircle,
+  Pause,
+  Play,
   PlayCircle,
   Radio,
   Youtube,
-} from 'lucide-react'
-import { useMemo } from 'react'
-
-import { formatCountdown, formatPrayerClock, type PrayerTimeline } from '@/lib/prayer'
-import type { LinksConfig, ResourceSectionIcon } from '@/types/content'
-import { useAdhanAlert } from '@/components/AdhanAlertProvider'
+} from "lucide-react";
+import { useMemo } from "react";
 
 interface QuickLinksSectionProps {
-  links: LinksConfig
-  prayerTimeline: PrayerTimeline | null
+  links: LinksConfig;
+  prayerTimeline: PrayerTimeline | null;
 }
 
 const iconMap = {
@@ -32,20 +35,23 @@ const iconMap = {
   youtube: Youtube,
   tiktok: PlayCircle,
   default: LinkIcon,
-}
+};
 
 const resourceSectionIconMap: Record<ResourceSectionIcon, typeof BookOpen> = {
-  'book-open': BookOpen,
+  "book-open": BookOpen,
   brain: Brain,
   handshake: Handshake,
-  'hand-heart': HandHeart,
-  'message-circle': MessageCircle,
-  'play-circle': PlayCircle,
+  "hand-heart": HandHeart,
+  "message-circle": MessageCircle,
+  "play-circle": PlayCircle,
   link: LinkIcon,
-}
+};
 
-export function QuickLinksSection({ links, prayerTimeline }: QuickLinksSectionProps) {
-  const adhanAlert = links.adhanAlert
+export function QuickLinksSection({
+  links,
+  prayerTimeline,
+}: QuickLinksSectionProps) {
+  const adhanAlert = links.adhanAlert;
   const {
     isAdhanAlertEnabled,
     setIsAdhanAlertEnabled,
@@ -53,21 +59,21 @@ export function QuickLinksSection({ links, prayerTimeline }: QuickLinksSectionPr
     toggleAudioPlayback,
     statusMessage,
     use24HourClock,
-  } = useAdhanAlert()
+  } = useAdhanAlert();
 
   const groupedResources = useMemo(() => {
-    const groups = new Map<string, NonNullable<LinksConfig['resources']>>()
+    const groups = new Map<string, NonNullable<LinksConfig["resources"]>>();
     for (const section of links.resourceSections ?? []) {
-      groups.set(section.id, [])
+      groups.set(section.id, []);
     }
 
     for (const resource of links.resources ?? []) {
-      const existing = groups.get(resource.sectionId) ?? []
-      groups.set(resource.sectionId, [...existing, resource])
+      const existing = groups.get(resource.sectionId) ?? [];
+      groups.set(resource.sectionId, [...existing, resource]);
     }
 
-    return groups
-  }, [links.resourceSections, links.resources])
+    return groups;
+  }, [links.resourceSections, links.resources]);
 
   return (
     <section className="panel reveal link-panel">
@@ -78,7 +84,8 @@ export function QuickLinksSection({ links, prayerTimeline }: QuickLinksSectionPr
 
       <div className="quick-links-grid">
         {links.quickLinks.map((link) => {
-          const Icon = iconMap[link.icon as keyof typeof iconMap] ?? iconMap.default
+          const Icon =
+            iconMap[link.icon as keyof typeof iconMap] ?? iconMap.default;
 
           return (
             <a
@@ -86,7 +93,7 @@ export function QuickLinksSection({ links, prayerTimeline }: QuickLinksSectionPr
               href={link.url}
               target="_blank"
               rel="noopener noreferrer"
-              className={link.featured ? 'quick-link featured' : 'quick-link'}
+              className={link.featured ? "quick-link featured" : "quick-link"}
             >
               <span className="quick-link-icon">
                 <Icon size={18} />
@@ -97,13 +104,19 @@ export function QuickLinksSection({ links, prayerTimeline }: QuickLinksSectionPr
               </span>
               <ExternalLink size={16} />
             </a>
-          )
+          );
         })}
       </div>
 
       <div className="social-strip">
         {links.socials.map((social) => (
-          <a key={social.platform} href={social.url} target="_blank" rel="noopener noreferrer" className="social-pill">
+          <a
+            key={social.platform}
+            href={social.url}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="social-pill"
+          >
             {social.platform}
           </a>
         ))}
@@ -120,7 +133,9 @@ export function QuickLinksSection({ links, prayerTimeline }: QuickLinksSectionPr
               <input
                 type="checkbox"
                 checked={isAdhanAlertEnabled}
-                onChange={(event) => setIsAdhanAlertEnabled(event.target.checked)}
+                onChange={(event) =>
+                  setIsAdhanAlertEnabled(event.target.checked)
+                }
               />
               <span>Alert on</span>
             </label>
@@ -128,40 +143,60 @@ export function QuickLinksSection({ links, prayerTimeline }: QuickLinksSectionPr
           <p className="source-note">{adhanAlert.description}</p>
           {prayerTimeline ? (
             <p className="source-note">
-              Next: <strong>{prayerTimeline.next.name}</strong> at {formatPrayerClock(prayerTimeline.next.time24, use24HourClock)} in{' '}
-              <strong>{formatCountdown(prayerTimeline.minutesUntilNext)}</strong>
+              Next: <strong>{prayerTimeline.next.name}</strong> at{" "}
+              {formatPrayerClock(prayerTimeline.next.time24, use24HourClock)} in{" "}
+              <strong>
+                {formatCountdown(prayerTimeline.minutesUntilNext)}
+              </strong>
             </p>
           ) : null}
           <div className="adhan-alert-actions">
-            <button type="button" className="icon-btn" onClick={toggleAudioPlayback}>
+            <button
+              type="button"
+              className="icon-btn"
+              onClick={toggleAudioPlayback}
+            >
               {isAudioPlaying ? <Pause size={14} /> : <Play size={14} />}
-              {isAudioPlaying ? 'Pause adhan' : 'Play adhan'}
+              {isAudioPlaying ? "Pause adhan" : "Play adhan"}
             </button>
-            <small className="source-note">Auto-play window: {adhanAlert.autoPlayWindowSeconds}s from each prayer start.</small>
+            <small className="source-note">
+              Auto-play window: {adhanAlert.autoPlayWindowSeconds}s from each
+              prayer start.
+            </small>
           </div>
-          {statusMessage ? <p className="source-note">{statusMessage}</p> : null}
+          {statusMessage ? (
+            <p className="source-note">{statusMessage}</p>
+          ) : null}
         </section>
       ) : null}
 
       {links.resources && links.resources.length > 0 ? (
         <section className="resource-sections">
           {(links.resourceSections ?? []).map((section) => {
-            const items = groupedResources.get(section.id) ?? []
+            const items = groupedResources.get(section.id) ?? [];
             if (items.length === 0) {
-              return null
+              return null;
             }
 
-            const Icon = resourceSectionIconMap[section.icon] ?? BookOpen
+            const Icon = resourceSectionIconMap[section.icon] ?? BookOpen;
             return (
               <article key={section.id} className="resource-group">
                 <p className="kicker">
                   <Icon size={14} />
                   {section.title}
                 </p>
-                {section.description ? <p className="source-note">{section.description}</p> : null}
+                {section.description ? (
+                  <p className="source-note">{section.description}</p>
+                ) : null}
                 <div className="resource-grid">
                   {items.map((resource) => (
-                    <a key={resource.id} href={resource.url} target="_blank" rel="noopener noreferrer" className="resource-link">
+                    <a
+                      key={resource.id}
+                      href={resource.url}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="resource-link"
+                    >
                       <span>
                         <strong>{resource.title}</strong>
                         <small>{resource.subtitle}</small>
@@ -171,10 +206,10 @@ export function QuickLinksSection({ links, prayerTimeline }: QuickLinksSectionPr
                   ))}
                 </div>
               </article>
-            )
+            );
           })}
         </section>
       ) : null}
     </section>
-  )
+  );
 }
