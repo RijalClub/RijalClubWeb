@@ -1,4 +1,24 @@
 import {
+  formatArabicAyahNumber,
+  loadChapterAudioUrl,
+  loadChapterVerses,
+  loadQuranBootstrap,
+  loadQuranPageVerses,
+  quranTtlHelpers,
+  scriptLabel,
+  verseTextByScript,
+  type QuranChapter,
+  type QuranPageVerse,
+  type QuranReciter,
+  type QuranTranslationResource,
+  type QuranVerse,
+} from "@/lib/quran";
+import type {
+  QuranCacheConfig,
+  QuranConfig,
+  QuranScript,
+} from "@/types/content";
+import {
   BookOpenText,
   ChevronLeft,
   ChevronRight,
@@ -10,356 +30,380 @@ import {
   Sun,
   Type,
   X,
-} from 'lucide-react'
-import { useEffect, useMemo, useState } from 'react'
-
-import {
-  loadChapterAudioUrl,
-  loadChapterVerses,
-  loadQuranBootstrap,
-  loadQuranPageVerses,
-  quranTtlHelpers,
-  scriptLabel,
-  formatArabicAyahNumber,
-  verseTextByScript,
-  type QuranChapter,
-  type QuranPageVerse,
-  type QuranReciter,
-  type QuranTranslationResource,
-  type QuranVerse,
-} from '@/lib/quran'
-import type { QuranCacheConfig, QuranConfig, QuranScript } from '@/types/content'
+} from "lucide-react";
+import { useEffect, useMemo, useState } from "react";
 
 interface QuranPageProps {
-  config: QuranConfig
-  cache: QuranCacheConfig
+  config: QuranConfig;
+  cache: QuranCacheConfig;
 }
 
 const SCRIPT_OPTIONS: QuranScript[] = [
-  'text_uthmani',
-  'text_qpc_hafs',
-  'text_qpc_nastaleeq_hafs',
-  'text_uthmani_tajweed',
-  'text_uthmani_simple',
-  'text_indopak',
-  'text_imlaei',
-  'text_imlaei_simple',
-]
+  "text_uthmani",
+  "text_qpc_hafs",
+  "text_qpc_nastaleeq_hafs",
+  "text_uthmani_tajweed",
+  "text_uthmani_simple",
+  "text_indopak",
+  "text_imlaei",
+  "text_imlaei_simple",
+];
 
-function loadStoredValue<T>(key: string, fallback: T, parser: (value: string) => T | null): T {
-  if (typeof window === 'undefined') {
-    return fallback
+function loadStoredValue<T>(
+  key: string,
+  fallback: T,
+  parser: (value: string) => T | null,
+): T {
+  if (typeof window === "undefined") {
+    return fallback;
   }
 
-  const stored = window.localStorage.getItem(key)
+  const stored = window.localStorage.getItem(key);
   if (!stored) {
-    return fallback
+    return fallback;
   }
 
   try {
-    return parser(stored) ?? fallback
+    return parser(stored) ?? fallback;
   } catch {
-    return fallback
+    return fallback;
   }
 }
 
 function chapterLabel(chapter: QuranChapter): string {
-  return `${chapter.id}. ${chapter.nameSimple} (${chapter.translatedName})`
+  return `${chapter.id}. ${chapter.nameSimple} (${chapter.translatedName})`;
 }
 
 function clampPage(page: number, maxPage: number): number {
   if (!Number.isFinite(page)) {
-    return 1
+    return 1;
   }
 
-  return Math.max(1, Math.min(maxPage, page))
+  return Math.max(1, Math.min(maxPage, page));
 }
 
 function arabicScriptClass(script: QuranScript): string {
   switch (script) {
-    case 'text_qpc_hafs':
-      return 'quran-script-qpc'
-    case 'text_qpc_nastaleeq_hafs':
-      return 'quran-script-nastaleeq'
+    case "text_qpc_hafs":
+      return "quran-script-qpc";
+    case "text_qpc_nastaleeq_hafs":
+      return "quran-script-nastaleeq";
     default:
-      return 'quran-script-uthmani'
+      return "quran-script-uthmani";
   }
 }
 
 export function QuranPage({ config, cache }: QuranPageProps) {
-  const [chapters, setChapters] = useState<QuranChapter[]>([])
-  const [translations, setTranslations] = useState<QuranTranslationResource[]>([])
-  const [reciters, setReciters] = useState<QuranReciter[]>([])
+  const [chapters, setChapters] = useState<QuranChapter[]>([]);
+  const [translations, setTranslations] = useState<QuranTranslationResource[]>(
+    [],
+  );
+  const [reciters, setReciters] = useState<QuranReciter[]>([]);
 
-  const [bootstrapLoading, setBootstrapLoading] = useState(true)
-  const [bootstrapError, setBootstrapError] = useState<string | null>(null)
+  const [bootstrapLoading, setBootstrapLoading] = useState(true);
+  const [bootstrapError, setBootstrapError] = useState<string | null>(null);
 
   const [chapterId, setChapterId] = useState(() =>
-    loadStoredValue('rijal:quran:chapter', config.defaultChapterId, (value) => {
-      const parsed = Number.parseInt(value, 10)
-      return Number.isNaN(parsed) ? null : parsed
+    loadStoredValue("rijal:quran:chapter", config.defaultChapterId, (value) => {
+      const parsed = Number.parseInt(value, 10);
+      return Number.isNaN(parsed) ? null : parsed;
     }),
-  )
+  );
 
   const [reciterId, setReciterId] = useState(() =>
-    loadStoredValue('rijal:quran:reciter', config.defaultReciterId, (value) => {
-      const parsed = Number.parseInt(value, 10)
-      return Number.isNaN(parsed) ? null : parsed
+    loadStoredValue("rijal:quran:reciter", config.defaultReciterId, (value) => {
+      const parsed = Number.parseInt(value, 10);
+      return Number.isNaN(parsed) ? null : parsed;
     }),
-  )
+  );
 
   const [script, setScript] = useState<QuranScript>(() =>
-    loadStoredValue('rijal:quran:script', config.defaultScript, (value) => {
+    loadStoredValue("rijal:quran:script", config.defaultScript, (value) => {
       if (SCRIPT_OPTIONS.includes(value as QuranScript)) {
-        return value as QuranScript
+        return value as QuranScript;
       }
 
-      return null
+      return null;
     }),
-  )
+  );
 
   const [fontScale, setFontScale] = useState(() =>
-    loadStoredValue('rijal:quran:font-scale', 1.45, (value) => {
-      const parsed = Number.parseFloat(value)
-      return Number.isNaN(parsed) ? null : Math.max(1.1, Math.min(2.3, parsed))
+    loadStoredValue("rijal:quran:font-scale", 1.45, (value) => {
+      const parsed = Number.parseFloat(value);
+      return Number.isNaN(parsed) ? null : Math.max(1.1, Math.min(2.3, parsed));
     }),
-  )
+  );
 
   const [showTransliteration, setShowTransliteration] = useState(() =>
-    loadStoredValue('rijal:quran:show-transliteration', true, (value) => {
-      if (value === 'true') return true
-      if (value === 'false') return false
-      return null
+    loadStoredValue("rijal:quran:show-transliteration", true, (value) => {
+      if (value === "true") return true;
+      if (value === "false") return false;
+      return null;
     }),
-  )
+  );
 
   const [showTranslations, setShowTranslations] = useState(() =>
-    loadStoredValue('rijal:quran:show-translations', true, (value) => {
-      if (value === 'true') return true
-      if (value === 'false') return false
-      return null
+    loadStoredValue("rijal:quran:show-translations", true, (value) => {
+      if (value === "true") return true;
+      if (value === "false") return false;
+      return null;
     }),
-  )
+  );
 
   const [lightMode, setLightMode] = useState(() =>
-    loadStoredValue('rijal:quran:light-mode', false, (value) => {
-      if (value === 'true') return true
-      if (value === 'false') return false
-      return null
+    loadStoredValue("rijal:quran:light-mode", false, (value) => {
+      if (value === "true") return true;
+      if (value === "false") return false;
+      return null;
     }),
-  )
+  );
 
-  const [selectedTranslationIds, setSelectedTranslationIds] = useState<number[]>(() =>
-    loadStoredValue('rijal:quran:translations', config.defaultTranslationIds, (value) => {
-      const parsed = JSON.parse(value) as unknown
-      if (!Array.isArray(parsed)) {
-        return null
-      }
+  const [selectedTranslationIds, setSelectedTranslationIds] = useState<
+    number[]
+  >(() =>
+    loadStoredValue(
+      "rijal:quran:translations",
+      config.defaultTranslationIds,
+      (value) => {
+        const parsed = JSON.parse(value) as unknown;
+        if (!Array.isArray(parsed)) {
+          return null;
+        }
 
-      const asNumbers = parsed
-        .map((item) => Number.parseInt(String(item), 10))
-        .filter((item) => Number.isFinite(item))
+        const asNumbers = parsed
+          .map((item) => Number.parseInt(String(item), 10))
+          .filter((item) => Number.isFinite(item));
 
-      return asNumbers.length > 0 ? asNumbers : null
-    }),
-  )
+        return asNumbers.length > 0 ? asNumbers : null;
+      },
+    ),
+  );
 
-  const [translationQuery, setTranslationQuery] = useState('')
-  const [languageFilter, setLanguageFilter] = useState('all')
+  const [translationQuery, setTranslationQuery] = useState("");
+  const [languageFilter, setLanguageFilter] = useState("all");
 
-  const [verses, setVerses] = useState<QuranVerse[]>([])
-  const [versesLoading, setVersesLoading] = useState(false)
-  const [versesError, setVersesError] = useState<string | null>(null)
+  const [verses, setVerses] = useState<QuranVerse[]>([]);
+  const [versesLoading, setVersesLoading] = useState(false);
+  const [versesError, setVersesError] = useState<string | null>(null);
 
-  const [audioUrl, setAudioUrl] = useState<string | null>(null)
+  const [audioUrl, setAudioUrl] = useState<string | null>(null);
 
-  const [isReaderModeOpen, setIsReaderModeOpen] = useState(false)
+  const [isReaderModeOpen, setIsReaderModeOpen] = useState(false);
   const [readerPage, setReaderPage] = useState(() =>
-    loadStoredValue('rijal:quran:reader-page', 1, (value) => {
-      const parsed = Number.parseInt(value, 10)
-      return Number.isNaN(parsed) ? null : parsed
+    loadStoredValue("rijal:quran:reader-page", 1, (value) => {
+      const parsed = Number.parseInt(value, 10);
+      return Number.isNaN(parsed) ? null : parsed;
     }),
-  )
-  const [readerDirection, setReaderDirection] = useState<'next' | 'prev' | null>(null)
-  const [readerVerses, setReaderVerses] = useState<QuranPageVerse[]>([])
-  const [readerLoading, setReaderLoading] = useState(false)
-  const [readerError, setReaderError] = useState<string | null>(null)
+  );
+  const [readerDirection, setReaderDirection] = useState<
+    "next" | "prev" | null
+  >(null);
+  const [readerVerses, setReaderVerses] = useState<QuranPageVerse[]>([]);
+  const [readerLoading, setReaderLoading] = useState(false);
+  const [readerError, setReaderError] = useState<string | null>(null);
 
   useEffect(() => {
-    let isMounted = true
+    let isMounted = true;
 
-    setBootstrapLoading(true)
+    setBootstrapLoading(true);
     void loadQuranBootstrap(config.apiBaseUrl, {
       ttlMs: quranTtlHelpers().hoursToMs(cache.bootstrapHours),
     })
       .then((payload) => {
         if (!isMounted) {
-          return
+          return;
         }
 
-        setChapters(payload.chapters)
-        setTranslations(payload.translations)
-        setReciters(payload.reciters)
-        setBootstrapError(null)
+        setChapters(payload.chapters);
+        setTranslations(payload.translations);
+        setReciters(payload.reciters);
+        setBootstrapError(null);
       })
       .catch((error: unknown) => {
         if (!isMounted) {
-          return
+          return;
         }
 
-        setBootstrapError(error instanceof Error ? error.message : 'Failed loading Quran resources.')
+        setBootstrapError(
+          error instanceof Error
+            ? error.message
+            : "Failed loading Quran resources.",
+        );
       })
       .finally(() => {
         if (isMounted) {
-          setBootstrapLoading(false)
+          setBootstrapLoading(false);
         }
-      })
+      });
 
     return () => {
-      isMounted = false
-    }
-  }, [cache.bootstrapHours, config.apiBaseUrl])
+      isMounted = false;
+    };
+  }, [cache.bootstrapHours, config.apiBaseUrl]);
 
   useEffect(() => {
-    if (typeof window === 'undefined') {
-      return
+    if (typeof window === "undefined") {
+      return;
     }
 
-    window.localStorage.setItem('rijal:quran:chapter', String(chapterId))
-  }, [chapterId])
+    window.localStorage.setItem("rijal:quran:chapter", String(chapterId));
+  }, [chapterId]);
 
   useEffect(() => {
-    if (typeof window === 'undefined') {
-      return
+    if (typeof window === "undefined") {
+      return;
     }
 
-    window.localStorage.setItem('rijal:quran:reciter', String(reciterId))
-  }, [reciterId])
+    window.localStorage.setItem("rijal:quran:reciter", String(reciterId));
+  }, [reciterId]);
 
   useEffect(() => {
-    if (typeof window === 'undefined') {
-      return
+    if (typeof window === "undefined") {
+      return;
     }
 
-    window.localStorage.setItem('rijal:quran:script', script)
-  }, [script])
+    window.localStorage.setItem("rijal:quran:script", script);
+  }, [script]);
 
   useEffect(() => {
-    if (typeof window === 'undefined') {
-      return
+    if (typeof window === "undefined") {
+      return;
     }
 
-    window.localStorage.setItem('rijal:quran:font-scale', String(fontScale))
-  }, [fontScale])
+    window.localStorage.setItem("rijal:quran:font-scale", String(fontScale));
+  }, [fontScale]);
 
   useEffect(() => {
-    if (typeof window === 'undefined') {
-      return
+    if (typeof window === "undefined") {
+      return;
     }
 
-    window.localStorage.setItem('rijal:quran:show-transliteration', String(showTransliteration))
-  }, [showTransliteration])
+    window.localStorage.setItem(
+      "rijal:quran:show-transliteration",
+      String(showTransliteration),
+    );
+  }, [showTransliteration]);
 
   useEffect(() => {
-    if (typeof window === 'undefined') {
-      return
+    if (typeof window === "undefined") {
+      return;
     }
 
-    window.localStorage.setItem('rijal:quran:show-translations', String(showTranslations))
-  }, [showTranslations])
+    window.localStorage.setItem(
+      "rijal:quran:show-translations",
+      String(showTranslations),
+    );
+  }, [showTranslations]);
 
   useEffect(() => {
-    if (typeof window === 'undefined') {
-      return
+    if (typeof window === "undefined") {
+      return;
     }
 
-    window.localStorage.setItem('rijal:quran:light-mode', String(lightMode))
-  }, [lightMode])
+    window.localStorage.setItem("rijal:quran:light-mode", String(lightMode));
+  }, [lightMode]);
 
   useEffect(() => {
-    if (typeof window === 'undefined') {
-      return
+    if (typeof window === "undefined") {
+      return;
     }
 
-    window.localStorage.setItem('rijal:quran:translations', JSON.stringify(selectedTranslationIds))
-  }, [selectedTranslationIds])
+    window.localStorage.setItem(
+      "rijal:quran:translations",
+      JSON.stringify(selectedTranslationIds),
+    );
+  }, [selectedTranslationIds]);
 
   const maxPage = useMemo(() => {
     if (chapters.length === 0) {
-      return 604
+      return 604;
     }
 
-    return chapters.reduce((highest, chapter) => Math.max(highest, chapter.pages[1]), 1)
-  }, [chapters])
+    return chapters.reduce(
+      (highest, chapter) => Math.max(highest, chapter.pages[1]),
+      1,
+    );
+  }, [chapters]);
 
   useEffect(() => {
-    if (typeof window === 'undefined') {
-      return
+    if (typeof window === "undefined") {
+      return;
     }
 
-    window.localStorage.setItem('rijal:quran:reader-page', String(readerPage))
-  }, [readerPage])
+    window.localStorage.setItem("rijal:quran:reader-page", String(readerPage));
+  }, [readerPage]);
 
   useEffect(() => {
     if (translations.length === 0) {
-      return
+      return;
     }
 
-    const allowedIds = new Set(translations.map((translation) => translation.id))
-    const validatedSelection = selectedTranslationIds.filter((id) => allowedIds.has(id))
+    const allowedIds = new Set(
+      translations.map((translation) => translation.id),
+    );
+    const validatedSelection = selectedTranslationIds.filter((id) =>
+      allowedIds.has(id),
+    );
 
     if (validatedSelection.length === 0) {
-      const fallback = config.defaultTranslationIds.find((id) => allowedIds.has(id))
+      const fallback = config.defaultTranslationIds.find((id) =>
+        allowedIds.has(id),
+      );
       if (fallback) {
-        setSelectedTranslationIds([fallback])
+        setSelectedTranslationIds([fallback]);
       } else {
-        setSelectedTranslationIds([translations[0].id])
+        setSelectedTranslationIds([translations[0].id]);
       }
-      return
+      return;
     }
 
     if (validatedSelection.length !== selectedTranslationIds.length) {
-      setSelectedTranslationIds(validatedSelection)
+      setSelectedTranslationIds(validatedSelection);
     }
-  }, [config.defaultTranslationIds, selectedTranslationIds, translations])
+  }, [config.defaultTranslationIds, selectedTranslationIds, translations]);
 
   useEffect(() => {
     if (chapters.length === 0) {
-      return
+      return;
     }
 
     if (!chapters.some((chapter) => chapter.id === chapterId)) {
-      setChapterId(config.defaultChapterId)
+      setChapterId(config.defaultChapterId);
     }
-  }, [chapterId, chapters, config.defaultChapterId])
+  }, [chapterId, chapters, config.defaultChapterId]);
 
   useEffect(() => {
     if (reciters.length === 0) {
-      return
+      return;
     }
 
     if (!reciters.some((reciter) => reciter.id === reciterId)) {
-      setReciterId(config.defaultReciterId)
+      setReciterId(config.defaultReciterId);
     }
-  }, [config.defaultReciterId, reciterId, reciters])
+  }, [config.defaultReciterId, reciterId, reciters]);
 
   const translationIdsToFetch = useMemo(() => {
-    const base: number[] = []
+    const base: number[] = [];
 
     if (showTranslations) {
-      base.push(...selectedTranslationIds)
+      base.push(...selectedTranslationIds);
     }
 
     if (showTransliteration) {
-      base.push(config.transliterationResourceId)
+      base.push(config.transliterationResourceId);
     }
 
-    return [...new Set(base)]
-  }, [config.transliterationResourceId, selectedTranslationIds, showTranslations, showTransliteration])
+    return [...new Set(base)];
+  }, [
+    config.transliterationResourceId,
+    selectedTranslationIds,
+    showTranslations,
+    showTransliteration,
+  ]);
 
   useEffect(() => {
-    let isMounted = true
-    setVersesLoading(true)
+    let isMounted = true;
+    setVersesLoading(true);
 
     void loadChapterVerses({
       apiBaseUrl: config.apiBaseUrl,
@@ -369,32 +413,41 @@ export function QuranPage({ config, cache }: QuranPageProps) {
     })
       .then((payload) => {
         if (!isMounted) {
-          return
+          return;
         }
 
-        setVerses(payload)
-        setVersesError(null)
+        setVerses(payload);
+        setVersesError(null);
       })
       .catch((error: unknown) => {
         if (!isMounted) {
-          return
+          return;
         }
 
-        setVersesError(error instanceof Error ? error.message : 'Unable to load verses right now.')
+        setVersesError(
+          error instanceof Error
+            ? error.message
+            : "Unable to load verses right now.",
+        );
       })
       .finally(() => {
         if (isMounted) {
-          setVersesLoading(false)
+          setVersesLoading(false);
         }
-      })
+      });
 
     return () => {
-      isMounted = false
-    }
-  }, [cache.chapterVersesDays, chapterId, config.apiBaseUrl, translationIdsToFetch])
+      isMounted = false;
+    };
+  }, [
+    cache.chapterVersesDays,
+    chapterId,
+    config.apiBaseUrl,
+    translationIdsToFetch,
+  ]);
 
   useEffect(() => {
-    let isMounted = true
+    let isMounted = true;
 
     void loadChapterAudioUrl({
       apiBaseUrl: config.apiBaseUrl,
@@ -404,32 +457,32 @@ export function QuranPage({ config, cache }: QuranPageProps) {
     })
       .then((result) => {
         if (isMounted) {
-          setAudioUrl(result)
+          setAudioUrl(result);
         }
       })
       .catch(() => {
         if (isMounted) {
-          setAudioUrl(null)
+          setAudioUrl(null);
         }
-      })
+      });
 
     return () => {
-      isMounted = false
-    }
-  }, [cache.chapterAudioHours, chapterId, config.apiBaseUrl, reciterId])
+      isMounted = false;
+    };
+  }, [cache.chapterAudioHours, chapterId, config.apiBaseUrl, reciterId]);
 
   useEffect(() => {
     if (!isReaderModeOpen) {
-      return
+      return;
     }
 
-    let isMounted = true
-    const page = clampPage(readerPage, maxPage)
+    let isMounted = true;
+    const page = clampPage(readerPage, maxPage);
     if (page !== readerPage) {
-      setReaderPage(page)
+      setReaderPage(page);
     }
 
-    setReaderLoading(true)
+    setReaderLoading(true);
     void loadQuranPageVerses({
       apiBaseUrl: config.apiBaseUrl,
       pageNumber: page,
@@ -437,178 +490,218 @@ export function QuranPage({ config, cache }: QuranPageProps) {
     })
       .then((payload) => {
         if (!isMounted) {
-          return
+          return;
         }
 
-        setReaderVerses(payload)
-        setReaderError(null)
+        setReaderVerses(payload);
+        setReaderError(null);
       })
       .catch((error: unknown) => {
         if (!isMounted) {
-          return
+          return;
         }
 
-        setReaderError(error instanceof Error ? error.message : 'Unable to load this Quran page.')
+        setReaderError(
+          error instanceof Error
+            ? error.message
+            : "Unable to load this Quran page.",
+        );
       })
       .finally(() => {
         if (isMounted) {
-          setReaderLoading(false)
+          setReaderLoading(false);
         }
-      })
+      });
 
     return () => {
-      isMounted = false
-    }
-  }, [cache.pageVersesDays, config.apiBaseUrl, isReaderModeOpen, maxPage, readerPage])
+      isMounted = false;
+    };
+  }, [
+    cache.pageVersesDays,
+    config.apiBaseUrl,
+    isReaderModeOpen,
+    maxPage,
+    readerPage,
+  ]);
 
   useEffect(() => {
     if (!isReaderModeOpen) {
-      return
+      return;
     }
 
-    const previousOverflow = document.body.style.overflow
-    document.body.style.overflow = 'hidden'
+    const previousOverflow = document.body.style.overflow;
+    document.body.style.overflow = "hidden";
 
     return () => {
-      document.body.style.overflow = previousOverflow
-    }
-  }, [isReaderModeOpen])
+      document.body.style.overflow = previousOverflow;
+    };
+  }, [isReaderModeOpen]);
 
   useEffect(() => {
     if (!isReaderModeOpen) {
-      return
+      return;
     }
 
     const onEscape = (event: KeyboardEvent): void => {
-      if (event.key === 'Escape') {
-        setIsReaderModeOpen(false)
+      if (event.key === "Escape") {
+        setIsReaderModeOpen(false);
       }
-    }
+    };
 
-    window.addEventListener('keydown', onEscape)
-    return () => window.removeEventListener('keydown', onEscape)
-  }, [isReaderModeOpen])
+    window.addEventListener("keydown", onEscape);
+    return () => window.removeEventListener("keydown", onEscape);
+  }, [isReaderModeOpen]);
 
   const selectedChapter = useMemo(
     () => chapters.find((chapter) => chapter.id === chapterId),
     [chapterId, chapters],
-  )
+  );
 
   const translationMap = useMemo(() => {
-    const map = new Map<number, QuranTranslationResource>()
+    const map = new Map<number, QuranTranslationResource>();
 
     for (const translation of translations) {
-      map.set(translation.id, translation)
+      map.set(translation.id, translation);
     }
 
-    return map
-  }, [translations])
+    return map;
+  }, [translations]);
 
   const languageOptions = useMemo(
-    () => ['all', ...new Set(translations.map((translation) => translation.languageName))],
+    () => [
+      "all",
+      ...new Set(translations.map((translation) => translation.languageName)),
+    ],
     [translations],
-  )
+  );
 
   const filteredTranslations = useMemo(() => {
-    const query = translationQuery.trim().toLowerCase()
+    const query = translationQuery.trim().toLowerCase();
 
     return translations.filter((translation) => {
-      if (languageFilter !== 'all' && translation.languageName !== languageFilter) {
-        return false
+      if (
+        languageFilter !== "all" &&
+        translation.languageName !== languageFilter
+      ) {
+        return false;
       }
 
       if (!query) {
-        return true
+        return true;
       }
 
       return (
         translation.name.toLowerCase().includes(query) ||
         translation.authorName.toLowerCase().includes(query) ||
         translation.languageName.toLowerCase().includes(query)
-      )
-    })
-  }, [languageFilter, translationQuery, translations])
+      );
+    });
+  }, [languageFilter, translationQuery, translations]);
 
   const selectedTranslationResources = useMemo(
     () =>
       selectedTranslationIds
         .map((id) => translationMap.get(id))
-        .filter((translation): translation is QuranTranslationResource => Boolean(translation)),
+        .filter((translation): translation is QuranTranslationResource =>
+          Boolean(translation),
+        ),
     [selectedTranslationIds, translationMap],
-  )
+  );
 
   const readerChapter = useMemo(
-    () => chapters.find((chapter) => readerPage >= chapter.pages[0] && readerPage <= chapter.pages[1]),
+    () =>
+      chapters.find(
+        (chapter) =>
+          readerPage >= chapter.pages[0] && readerPage <= chapter.pages[1],
+      ),
     [chapters, readerPage],
-  )
+  );
 
-  const readerPageOptions = useMemo(() => Array.from({ length: maxPage }, (_, index) => index + 1), [maxPage])
+  const readerPageOptions = useMemo(
+    () => Array.from({ length: maxPage }, (_, index) => index + 1),
+    [maxPage],
+  );
 
   useEffect(() => {
     if (!isReaderModeOpen || !readerChapter || chapterId === readerChapter.id) {
-      return
+      return;
     }
 
-    setChapterId(readerChapter.id)
-  }, [chapterId, isReaderModeOpen, readerChapter])
+    setChapterId(readerChapter.id);
+  }, [chapterId, isReaderModeOpen, readerChapter]);
 
   const toggleTranslation = (translationId: number): void => {
-    const exists = selectedTranslationIds.includes(translationId)
+    const exists = selectedTranslationIds.includes(translationId);
 
     if (exists) {
-      const without = selectedTranslationIds.filter((id) => id !== translationId)
+      const without = selectedTranslationIds.filter(
+        (id) => id !== translationId,
+      );
       if (without.length > 0) {
-        setSelectedTranslationIds(without)
+        setSelectedTranslationIds(without);
       }
-      return
+      return;
     }
 
     if (selectedTranslationIds.length >= config.maxSelectableTranslations) {
-      return
+      return;
     }
 
-    setSelectedTranslationIds([...selectedTranslationIds, translationId])
-  }
+    setSelectedTranslationIds([...selectedTranslationIds, translationId]);
+  };
 
-  const goToReaderPage = (nextPage: number, direction: 'next' | 'prev' | null): void => {
-    setReaderDirection(direction)
-    setReaderPage(clampPage(nextPage, maxPage))
-  }
+  const goToReaderPage = (
+    nextPage: number,
+    direction: "next" | "prev" | null,
+  ): void => {
+    setReaderDirection(direction);
+    setReaderPage(clampPage(nextPage, maxPage));
+  };
 
   const openReaderMode = (): void => {
-    const startingPage = selectedChapter?.pages[0] ?? 1
-    setReaderDirection(null)
-    setReaderPage(clampPage(startingPage, maxPage))
-    setIsReaderModeOpen(true)
-  }
+    const startingPage = selectedChapter?.pages[0] ?? 1;
+    setReaderDirection(null);
+    setReaderPage(clampPage(startingPage, maxPage));
+    setIsReaderModeOpen(true);
+  };
 
   const resetQuranPreferences = (): void => {
-    const defaultChapterPage = chapters.find((chapter) => chapter.id === config.defaultChapterId)?.pages[0] ?? 1
+    const defaultChapterPage =
+      chapters.find((chapter) => chapter.id === config.defaultChapterId)
+        ?.pages[0] ?? 1;
 
-    setChapterId(config.defaultChapterId)
-    setReciterId(config.defaultReciterId)
-    setScript(config.defaultScript)
-    setFontScale(1.45)
-    setShowTransliteration(true)
-    setShowTranslations(true)
-    setLightMode(false)
-    setSelectedTranslationIds(config.defaultTranslationIds)
-    setTranslationQuery('')
-    setLanguageFilter('all')
-    setReaderPage(clampPage(defaultChapterPage, maxPage))
-    setReaderDirection(null)
-    setIsReaderModeOpen(false)
+    setChapterId(config.defaultChapterId);
+    setReciterId(config.defaultReciterId);
+    setScript(config.defaultScript);
+    setFontScale(1.45);
+    setShowTransliteration(true);
+    setShowTranslations(true);
+    setLightMode(false);
+    setSelectedTranslationIds(config.defaultTranslationIds);
+    setTranslationQuery("");
+    setLanguageFilter("all");
+    setReaderPage(clampPage(defaultChapterPage, maxPage));
+    setReaderDirection(null);
+    setIsReaderModeOpen(false);
 
-    if (typeof window !== 'undefined') {
-      const keys = Object.keys(window.localStorage).filter((key) => key.startsWith('rijal:quran:'))
+    if (typeof window !== "undefined") {
+      const keys = Object.keys(window.localStorage).filter((key) =>
+        key.startsWith("rijal:quran:"),
+      );
       for (const key of keys) {
-        window.localStorage.removeItem(key)
+        window.localStorage.removeItem(key);
       }
     }
-  }
+  };
 
   return (
-    <main className={lightMode ? 'page-grid quran-page quran-theme-light' : 'page-grid quran-page'}>
+    <main
+      className={
+        lightMode
+          ? "page-grid quran-page quran-theme-light"
+          : "page-grid quran-page"
+      }
+    >
       <section className="panel reveal quran-hero">
         <p className="kicker">
           <BookOpenText size={16} />
@@ -617,14 +710,22 @@ export function QuranPage({ config, cache }: QuranPageProps) {
         <h1>{config.title}</h1>
         <p>{config.description}</p>
         <p className="quran-meta">
-          {selectedChapter ? `${selectedChapter.nameSimple} • ${selectedChapter.nameArabic}` : 'Loading chapter info...'}
+          {selectedChapter
+            ? `${selectedChapter.nameSimple} • ${selectedChapter.nameArabic}`
+            : "Loading chapter info..."}
         </p>
-        <p className="source-note">Resume point is saved locally: Surah {chapterId}, page {readerPage}.</p>
+        <p className="source-note">
+          Resume point is saved locally: Surah {chapterId}, page {readerPage}.
+        </p>
       </section>
 
       <section className="panel reveal quran-controls-panel">
-        {bootstrapLoading ? <p className="state-text">Loading Quran resources...</p> : null}
-        {bootstrapError ? <p className="state-text error">{bootstrapError}</p> : null}
+        {bootstrapLoading ? (
+          <p className="state-text">Loading Quran resources...</p>
+        ) : null}
+        {bootstrapError ? (
+          <p className="state-text error">{bootstrapError}</p>
+        ) : null}
 
         {!bootstrapLoading && !bootstrapError ? (
           <>
@@ -634,7 +735,9 @@ export function QuranPage({ config, cache }: QuranPageProps) {
                 <select
                   id="quran-chapter-select"
                   value={chapterId}
-                  onChange={(event) => setChapterId(Number.parseInt(event.target.value, 10))}
+                  onChange={(event) =>
+                    setChapterId(Number.parseInt(event.target.value, 10))
+                  }
                 >
                   {chapters.map((chapter) => (
                     <option key={chapter.id} value={chapter.id}>
@@ -649,12 +752,14 @@ export function QuranPage({ config, cache }: QuranPageProps) {
                 <select
                   id="quran-reciter-select"
                   value={reciterId}
-                  onChange={(event) => setReciterId(Number.parseInt(event.target.value, 10))}
+                  onChange={(event) =>
+                    setReciterId(Number.parseInt(event.target.value, 10))
+                  }
                 >
                   {reciters.map((reciter) => (
                     <option key={reciter.id} value={reciter.id}>
                       {reciter.reciterName}
-                      {reciter.style ? ` (${reciter.style})` : ''}
+                      {reciter.style ? ` (${reciter.style})` : ""}
                     </option>
                   ))}
                 </select>
@@ -665,7 +770,9 @@ export function QuranPage({ config, cache }: QuranPageProps) {
                 <select
                   id="quran-script-select"
                   value={script}
-                  onChange={(event) => setScript(event.target.value as QuranScript)}
+                  onChange={(event) =>
+                    setScript(event.target.value as QuranScript)
+                  }
                 >
                   {SCRIPT_OPTIONS.map((option) => (
                     <option key={option} value={option}>
@@ -684,7 +791,9 @@ export function QuranPage({ config, cache }: QuranPageProps) {
                   max="2.3"
                   step="0.05"
                   value={fontScale}
-                  onChange={(event) => setFontScale(Number.parseFloat(event.target.value))}
+                  onChange={(event) =>
+                    setFontScale(Number.parseFloat(event.target.value))
+                  }
                 />
               </label>
             </div>
@@ -694,7 +803,9 @@ export function QuranPage({ config, cache }: QuranPageProps) {
                 <input
                   type="checkbox"
                   checked={showTranslations}
-                  onChange={(event) => setShowTranslations(event.target.checked)}
+                  onChange={(event) =>
+                    setShowTranslations(event.target.checked)
+                  }
                 />
                 <span>Show translations</span>
               </label>
@@ -703,28 +814,43 @@ export function QuranPage({ config, cache }: QuranPageProps) {
                 <input
                   type="checkbox"
                   checked={showTransliteration}
-                  onChange={(event) => setShowTransliteration(event.target.checked)}
+                  onChange={(event) =>
+                    setShowTransliteration(event.target.checked)
+                  }
                 />
                 <span>Show transliteration</span>
               </label>
 
               <label className="tick-option">
-                <input type="checkbox" checked={lightMode} onChange={(event) => setLightMode(event.target.checked)} />
+                <input
+                  type="checkbox"
+                  checked={lightMode}
+                  onChange={(event) => setLightMode(event.target.checked)}
+                />
                 <span>Light mode</span>
               </label>
 
-              <button type="button" className="icon-btn" onClick={openReaderMode}>
+              <button
+                type="button"
+                className="icon-btn"
+                onClick={openReaderMode}
+              >
                 <ScanText size={14} />
                 Arabic reader mode
               </button>
 
-              <button type="button" className="icon-btn" onClick={resetQuranPreferences}>
+              <button
+                type="button"
+                className="icon-btn"
+                onClick={resetQuranPreferences}
+              >
                 <RotateCcw size={14} />
                 Reset Quran
               </button>
 
               <span className="state-text">
-                {selectedTranslationIds.length}/{config.maxSelectableTranslations} translations selected
+                {selectedTranslationIds.length}/
+                {config.maxSelectableTranslations} translations selected
               </span>
             </div>
 
@@ -751,12 +877,17 @@ export function QuranPage({ config, cache }: QuranPageProps) {
                   <input
                     id="translation-search"
                     value={translationQuery}
-                    onChange={(event) => setTranslationQuery(event.target.value)}
+                    onChange={(event) =>
+                      setTranslationQuery(event.target.value)
+                    }
                     placeholder="Search translation, author, or language"
                   />
                 </label>
 
-                <label className="select-wrap" htmlFor="translation-language-filter">
+                <label
+                  className="select-wrap"
+                  htmlFor="translation-language-filter"
+                >
                   Language
                   <select
                     id="translation-language-filter"
@@ -765,7 +896,7 @@ export function QuranPage({ config, cache }: QuranPageProps) {
                   >
                     {languageOptions.map((language) => (
                       <option key={language} value={language}>
-                        {language === 'all' ? 'All languages' : language}
+                        {language === "all" ? "All languages" : language}
                       </option>
                     ))}
                   </select>
@@ -774,12 +905,23 @@ export function QuranPage({ config, cache }: QuranPageProps) {
 
               <div className="translation-list">
                 {filteredTranslations.map((translation) => {
-                  const checked = selectedTranslationIds.includes(translation.id)
+                  const checked = selectedTranslationIds.includes(
+                    translation.id,
+                  );
                   const disableNewSelection =
-                    !checked && selectedTranslationIds.length >= config.maxSelectableTranslations
+                    !checked &&
+                    selectedTranslationIds.length >=
+                      config.maxSelectableTranslations;
 
                   return (
-                    <label key={translation.id} className={checked ? 'translation-option checked' : 'translation-option'}>
+                    <label
+                      key={translation.id}
+                      className={
+                        checked
+                          ? "translation-option checked"
+                          : "translation-option"
+                      }
+                    >
                       <input
                         type="checkbox"
                         checked={checked}
@@ -793,14 +935,19 @@ export function QuranPage({ config, cache }: QuranPageProps) {
                         </small>
                       </span>
                     </label>
-                  )
+                  );
                 })}
               </div>
             </details>
 
             <div className="translation-chip-row">
               {selectedTranslationResources.map((translation) => (
-                <button key={translation.id} type="button" className="social-pill" onClick={() => toggleTranslation(translation.id)}>
+                <button
+                  key={translation.id}
+                  type="button"
+                  className="social-pill"
+                  onClick={() => toggleTranslation(translation.id)}
+                >
                   {translation.name}
                 </button>
               ))}
@@ -816,8 +963,9 @@ export function QuranPage({ config, cache }: QuranPageProps) {
         <div className="verse-list">
           {verses.map((verse) => {
             const transliteration = verse.translations.find(
-              (translation) => translation.resourceId === config.transliterationResourceId,
-            )
+              (translation) =>
+                translation.resourceId === config.transliterationResourceId,
+            );
 
             return (
               <article key={verse.id} className="verse-card">
@@ -827,18 +975,26 @@ export function QuranPage({ config, cache }: QuranPageProps) {
                 </header>
 
                 <div className="quran-arabic-line">
-                  {script === 'text_uthmani_tajweed' ? (
+                  {script === "text_uthmani_tajweed" ? (
                     <p
                       className={`quran-arabic ${arabicScriptClass(script)}`}
                       style={{ fontSize: `${fontScale}rem` }}
-                      dangerouslySetInnerHTML={{ __html: verseTextByScript(verse, script) }}
+                      dangerouslySetInnerHTML={{
+                        __html: verseTextByScript(verse, script),
+                      }}
                     />
                   ) : (
-                    <p className={`quran-arabic ${arabicScriptClass(script)}`} style={{ fontSize: `${fontScale}rem` }}>
+                    <p
+                      className={`quran-arabic ${arabicScriptClass(script)}`}
+                      style={{ fontSize: `${fontScale}rem` }}
+                    >
                       {verseTextByScript(verse, script)}
                     </p>
                   )}
-                  <span className="ayah-badge" aria-label={`Ayah ${verse.verseNumber}`}>
+                  <span
+                    className="ayah-badge"
+                    aria-label={`Ayah ${verse.verseNumber}`}
+                  >
                     {formatArabicAyahNumber(verse.verseNumber)}
                   </span>
                 </div>
@@ -854,32 +1010,45 @@ export function QuranPage({ config, cache }: QuranPageProps) {
                   <div className="verse-translations">
                     {selectedTranslationIds.map((translationId) => {
                       const translationText = verse.translations.find(
-                        (translation) => translation.resourceId === translationId,
-                      )
-                      const resource = translationMap.get(translationId)
+                        (translation) =>
+                          translation.resourceId === translationId,
+                      );
+                      const resource = translationMap.get(translationId);
 
                       if (!translationText || !resource) {
-                        return null
+                        return null;
                       }
 
                       return (
-                        <article key={`${verse.id}-${translationId}`} className="verse-translation-block">
+                        <article
+                          key={`${verse.id}-${translationId}`}
+                          className="verse-translation-block"
+                        >
                           <h4>{resource.name}</h4>
                           <p>{translationText.text}</p>
                         </article>
-                      )
+                      );
                     })}
                   </div>
                 ) : null}
               </article>
-            )
+            );
           })}
         </div>
       </section>
 
       {isReaderModeOpen ? (
-        <div className="reader-modal" role="dialog" aria-modal="true" aria-label="Arabic reader mode">
-          <div className="reader-overlay" onClick={() => setIsReaderModeOpen(false)} aria-hidden="true" />
+        <div
+          className="reader-modal"
+          role="dialog"
+          aria-modal="true"
+          aria-label="Arabic reader mode"
+        >
+          <div
+            className="reader-overlay"
+            onClick={() => setIsReaderModeOpen(false)}
+            aria-hidden="true"
+          />
           <section className="reader-modal-panel panel">
             <header className="reader-modal-header">
               <div>
@@ -896,7 +1065,7 @@ export function QuranPage({ config, cache }: QuranPageProps) {
               <div className="reader-header-actions">
                 <button
                   type="button"
-                  className={lightMode ? 'icon-btn active' : 'icon-btn'}
+                  className={lightMode ? "icon-btn active" : "icon-btn"}
                   onClick={() => setLightMode((value) => !value)}
                 >
                   <Sun size={14} />
@@ -921,14 +1090,19 @@ export function QuranPage({ config, cache }: QuranPageProps) {
                   id="reader-surah-select"
                   value={readerChapter?.id ?? chapterId}
                   onChange={(event) => {
-                    const nextChapterId = Number.parseInt(event.target.value, 10)
-                    const nextChapter = chapters.find((chapter) => chapter.id === nextChapterId)
+                    const nextChapterId = Number.parseInt(
+                      event.target.value,
+                      10,
+                    );
+                    const nextChapter = chapters.find(
+                      (chapter) => chapter.id === nextChapterId,
+                    );
                     if (!nextChapter) {
-                      return
+                      return;
                     }
 
-                    setChapterId(nextChapter.id)
-                    goToReaderPage(nextChapter.pages[0], 'next')
+                    setChapterId(nextChapter.id);
+                    goToReaderPage(nextChapter.pages[0], "next");
                   }}
                 >
                   {chapters.map((chapter) => (
@@ -944,7 +1118,12 @@ export function QuranPage({ config, cache }: QuranPageProps) {
                 <select
                   id="reader-page-select"
                   value={readerPage}
-                  onChange={(event) => goToReaderPage(Number.parseInt(event.target.value, 10), 'next')}
+                  onChange={(event) =>
+                    goToReaderPage(
+                      Number.parseInt(event.target.value, 10),
+                      "next",
+                    )
+                  }
                 >
                   {readerPageOptions.map((page) => (
                     <option key={page} value={page}>
@@ -959,7 +1138,7 @@ export function QuranPage({ config, cache }: QuranPageProps) {
                   type="button"
                   className="icon-btn"
                   disabled={readerPage <= 1}
-                  onClick={() => goToReaderPage(readerPage - 1, 'prev')}
+                  onClick={() => goToReaderPage(readerPage - 1, "prev")}
                 >
                   <ChevronLeft size={14} />
                   Previous
@@ -968,7 +1147,7 @@ export function QuranPage({ config, cache }: QuranPageProps) {
                   type="button"
                   className="icon-btn"
                   disabled={readerPage >= maxPage}
-                  onClick={() => goToReaderPage(readerPage + 1, 'next')}
+                  onClick={() => goToReaderPage(readerPage + 1, "next")}
                 >
                   Next
                   <ChevronRight size={14} />
@@ -976,33 +1155,58 @@ export function QuranPage({ config, cache }: QuranPageProps) {
               </div>
             </div>
 
-            {readerLoading ? <p className="state-text">Loading Quran page...</p> : null}
-            {readerError ? <p className="state-text error">{readerError}</p> : null}
+            {readerLoading ? (
+              <p className="state-text">Loading Quran page...</p>
+            ) : null}
+            {readerError ? (
+              <p className="state-text error">{readerError}</p>
+            ) : null}
 
             <div className="reader-page-card">
-              <div className={readerDirection === 'next' ? 'reader-flow animate-next' : readerDirection === 'prev' ? 'reader-flow animate-prev' : 'reader-flow'}>
+              <div
+                className={
+                  readerDirection === "next"
+                    ? "reader-flow animate-next"
+                    : readerDirection === "prev"
+                      ? "reader-flow animate-prev"
+                      : "reader-flow"
+                }
+              >
                 {readerVerses.map((verse) => (
-                  <span key={verse.id} className="reader-verse-inline" style={{ fontSize: `${fontScale * 1.05}rem` }}>
-                    {script === 'text_uthmani_tajweed' ? (
+                  <span
+                    key={verse.id}
+                    className="reader-verse-inline"
+                    style={{ fontSize: `${fontScale * 1.05}rem` }}
+                  >
+                    {script === "text_uthmani_tajweed" ? (
                       <span
                         className={`reader-verse-text ${arabicScriptClass(script)}`}
-                        dangerouslySetInnerHTML={{ __html: verseTextByScript(verse, script) }}
+                        dangerouslySetInnerHTML={{
+                          __html: verseTextByScript(verse, script),
+                        }}
                       />
                     ) : (
-                      <span className={`reader-verse-text ${arabicScriptClass(script)}`}>
+                      <span
+                        className={`reader-verse-text ${arabicScriptClass(script)}`}
+                      >
                         {verseTextByScript(verse, script)}
                       </span>
                     )}
-                    <span className="reader-ayah-no">{formatArabicAyahNumber(verse.verseNumber)}</span>
+                    <span className="reader-ayah-no">
+                      {formatArabicAyahNumber(verse.verseNumber)}
+                    </span>
                   </span>
                 ))}
               </div>
             </div>
 
-            <p className="source-note">13-line-inspired page mode for focused Arabic reading. Use the controls above to jump by surah or page.</p>
+            <p className="source-note">
+              13-line-inspired page mode for focused Arabic reading. Use the
+              controls above to jump by surah or page.
+            </p>
           </section>
         </div>
       ) : null}
     </main>
-  )
+  );
 }

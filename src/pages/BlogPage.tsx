@@ -1,6 +1,5 @@
-import { CalendarDays, HeartPulse, Rss } from "lucide-react";
-
 import type { BlogConfig } from "@/types/content";
+import { CalendarDays, HeartPulse, Rss } from "lucide-react";
 
 interface BlogPageProps {
   blog: BlogConfig;
