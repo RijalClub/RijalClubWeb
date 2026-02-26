@@ -40,7 +40,7 @@ VITE_CONTENT_BASE_URL=https://raw.githubusercontent.com/<org>/<repo>/<branch>/co
 ## Prayer times
 
 - London defaults to London Central Mosque feed (`iccuk.org`) through proxy.
-- Other locales use a timezone/geolocation-based recommended profile and AlAdhan API fallback.
+- Other locales use a timezone/geolocation-based recommended profile and AdhanJS api.
 - 12h/24h clock toggle is saved in local storage.
 - Prayer API cache TTL values come from `cache.json`.
 
@@ -53,7 +53,7 @@ VITE_CONTENT_BASE_URL=https://raw.githubusercontent.com/<org>/<repo>/<branch>/co
 
 ## Library
 
-- Sunni hadith library page with configurable collections from `hadith.json`.
+- Hadith library page with configurable collections from `hadith.json`.
 - English text is the default minimum, with transliteration/ar text shown when available from source.
 - Hadith API cache TTL values come from `cache.json`.
 
