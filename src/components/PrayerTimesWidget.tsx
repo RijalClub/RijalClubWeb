@@ -170,6 +170,7 @@ export function PrayerTimesWidget({
   const [madhabOverrides, setMadhabOverrides] = useState<
     Record<string, AdhanMadhab>
   >(() => loadStoredMadhabOverrides());
+  const [geoRetrigger, setGeoRetrigger] = useState(0);
 
   const selectedLocation = useMemo(
     () =>
@@ -178,17 +179,13 @@ export function PrayerTimesWidget({
     [config.locations, defaultLocation, selectedLocationId],
   );
 
-  const selectedMadhab = useMemo<AdhanMadhab | null>(() => {
-    if (selectedLocation.provider === "iccuk_html") {
-      return null;
-    }
-
-    return (
+  const selectedMadhab = useMemo<AdhanMadhab>(
+    () =>
       madhabOverrides[selectedLocation.id] ??
       selectedLocation.adhanMadhab ??
-      "shafi"
-    );
-  }, [madhabOverrides, selectedLocation]);
+      "shafi",
+    [madhabOverrides, selectedLocation],
+  );
 
   const adhanCoordinateOverride = useMemo(() => {
     if (!useDeviceCoords || !deviceCoords) {
@@ -206,11 +203,11 @@ export function PrayerTimesWidget({
     try {
       const result = await loadPrayerTimesForLocation(selectedLocation, {
         cacheTtlMs: {
-          iccukMs: Math.max(1, cache.londonFeedMinutes) * 60_000,
+          feedMs: Math.max(1, cache.londonFeedMinutes) * 60_000,
           adhanMs: Math.max(1, cache.aladhanMinutes) * 60_000,
         },
         coordinateOverride: adhanCoordinateOverride,
-        adhanMadhabOverride: selectedMadhab ?? undefined,
+        adhanMadhabOverride: selectedMadhab,
       });
       setSnapshot(result);
       setErrorMessage(null);
@@ -300,6 +297,37 @@ export function PrayerTimesWidget({
     );
   }, [madhabOverrides]);
 
+  useEffect(() => {
+    if (typeof window === "undefined" || !navigator.geolocation) {
+      return;
+    }
+
+    navigator.geolocation.getCurrentPosition(
+      (position) => {
+        const coords = {
+          latitude: position.coords.latitude,
+          longitude: position.coords.longitude,
+        };
+
+        setDeviceCoords(coords);
+
+        const hasStoredLocation =
+          window.localStorage.getItem(SELECTED_LOCATION_KEY) !== null;
+
+        if (!hasStoredLocation) {
+          const nearest = pickRecommendedLocation(config, timezone, coords);
+          setSelectedLocationId(nearest.id);
+        }
+
+        setUseDeviceCoords(true);
+      },
+      () => {
+        /* silent fallback — timezone routing remains active */
+      },
+      { timeout: 8_000 },
+    );
+  }, [config, timezone, geoRetrigger]);
+
   const timeline = useMemo(() => {
     if (!snapshot) {
       return null;
@@ -359,19 +387,11 @@ export function PrayerTimesWidget({
     setIsLocating(true);
     navigator.geolocation.getCurrentPosition(
       (position) => {
-        const coords = {
+        setDeviceCoords({
           latitude: position.coords.latitude,
           longitude: position.coords.longitude,
-        };
-
-        const nearest = pickRecommendedLocation(config, timezone, {
-          latitude: coords.latitude,
-          longitude: coords.longitude,
         });
-
-        setDeviceCoords(coords);
         setUseDeviceCoords(true);
-        setSelectedLocationId(nearest.id);
         setErrorMessage(null);
         setIsLocating(false);
       },
@@ -388,7 +408,6 @@ export function PrayerTimesWidget({
   };
 
   const handleResetPreferences = (): void => {
-    setSelectedLocationId(defaultLocation.id);
     setSelectedWeekDate(null);
     setUse24Hour(false);
     setUseDeviceCoords(false);
@@ -396,15 +415,17 @@ export function PrayerTimesWidget({
     setMadhabOverrides({});
     setErrorMessage(null);
 
-    if (typeof window === "undefined") {
-      return;
+    if (typeof window !== "undefined") {
+      window.localStorage.removeItem(SELECTED_LOCATION_KEY);
+      window.localStorage.removeItem(USE_DEVICE_COORDS_KEY);
+      window.localStorage.removeItem(LAST_DEVICE_COORDS_KEY);
+      window.localStorage.removeItem(CLOCK_24_KEY);
+      window.localStorage.removeItem(MADHAB_OVERRIDES_KEY);
     }
 
-    window.localStorage.removeItem(SELECTED_LOCATION_KEY);
-    window.localStorage.removeItem(USE_DEVICE_COORDS_KEY);
-    window.localStorage.removeItem(LAST_DEVICE_COORDS_KEY);
-    window.localStorage.removeItem(CLOCK_24_KEY);
-    window.localStorage.removeItem(MADHAB_OVERRIDES_KEY);
+    const fallback = pickRecommendedLocation(config, timezone);
+    setSelectedLocationId(fallback.id);
+    setGeoRetrigger((value) => value + 1);
   };
 
   return (
@@ -471,43 +492,37 @@ export function PrayerTimesWidget({
       </label>
 
       <div className="prayer-option-row">
-        {selectedLocation.provider !== "iccuk_html" ? (
-          <div className="madhab-toggle" role="group" aria-label="Madhab">
-            <span>Madhab</span>
-            <button
-              type="button"
-              className={
-                selectedMadhab === "shafi" ? "madhab-btn active" : "madhab-btn"
-              }
-              onClick={() => {
-                setMadhabOverrides((current) => ({
-                  ...current,
-                  [selectedLocation.id]: "shafi",
-                }));
-              }}
-            >
-              Shafi
-            </button>
-            <button
-              type="button"
-              className={
-                selectedMadhab === "hanafi" ? "madhab-btn active" : "madhab-btn"
-              }
-              onClick={() => {
-                setMadhabOverrides((current) => ({
-                  ...current,
-                  [selectedLocation.id]: "hanafi",
-                }));
-              }}
-            >
-              Hanafi
-            </button>
-          </div>
-        ) : (
-          <p className="source-note">
-            Madhab selector is not available for this source.
-          </p>
-        )}
+        <div className="madhab-toggle" role="group" aria-label="Madhab">
+          <span>Madhab</span>
+          <button
+            type="button"
+            className={
+              selectedMadhab === "shafi" ? "madhab-btn active" : "madhab-btn"
+            }
+            onClick={() => {
+              setMadhabOverrides((current) => ({
+                ...current,
+                [selectedLocation.id]: "shafi",
+              }));
+            }}
+          >
+            Shafi
+          </button>
+          <button
+            type="button"
+            className={
+              selectedMadhab === "hanafi" ? "madhab-btn active" : "madhab-btn"
+            }
+            onClick={() => {
+              setMadhabOverrides((current) => ({
+                ...current,
+                [selectedLocation.id]: "hanafi",
+              }));
+            }}
+          >
+            Hanafi
+          </button>
+        </div>
         <button
           type="button"
           className="icon-btn prayer-reset-btn"

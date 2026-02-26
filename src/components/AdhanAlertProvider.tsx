@@ -447,16 +447,14 @@ export function AdhanAlertProvider({
         ) ?? fallbackLocation;
 
       const madhabOverrides = loadStoredMadhabOverrides();
-      const selectedMadhab: AdhanMadhab | undefined =
-        selectedLocation.provider === "iccuk_html"
-          ? undefined
-          : (madhabOverrides[selectedLocation.id] ??
-            selectedLocation.adhanMadhab ??
-            "shafi");
+      const selectedMadhab: AdhanMadhab =
+        madhabOverrides[selectedLocation.id] ??
+        selectedLocation.adhanMadhab ??
+        "shafi";
 
       return loadPrayerTimesForLocation(selectedLocation, {
         cacheTtlMs: {
-          iccukMs: Math.max(1, prayerCache.londonFeedMinutes) * 60_000,
+          feedMs: Math.max(1, prayerCache.londonFeedMinutes) * 60_000,
           adhanMs: Math.max(1, prayerCache.aladhanMinutes) * 60_000,
         },
         coordinateOverride,

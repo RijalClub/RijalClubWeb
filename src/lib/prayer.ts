@@ -1,4 +1,4 @@
-import { fetchJsonWithCache, fetchTextWithCache } from "@/lib/fetchCache";
+import { fetchJsonWithCache } from "@/lib/fetchCache";
 import type {
   AdhanMadhab,
   PrayerConfig,
@@ -24,19 +24,9 @@ const prayerNames: PrayerName[] = [
 const DEFAULT_CACHE_TTL_MS = 10 * 60 * 1000;
 
 export interface PrayerCacheTtlMs {
-  iccukMs: number;
+  feedMs: number;
   adhanMs: number;
 }
-
-const prayerNameLookup: Record<string, PrayerName> = {
-  fajr: "Fajr",
-  sunrise: "Sunrise",
-  zuhr: "Dhuhr",
-  dhuhr: "Dhuhr",
-  asr: "Asr",
-  maghrib: "Maghrib",
-  isha: "Isha",
-};
 
 export interface PrayerSlot {
   name: PrayerName;
@@ -94,11 +84,6 @@ interface LondonUnifiedPayload {
   days?: LondonUnifiedDay[];
 }
 
-function normalisePrayerName(raw: string): PrayerName | null {
-  const key = raw.trim().toLowerCase();
-  return prayerNameLookup[key] ?? null;
-}
-
 function toTime24(rawTime: string): string {
   const cleaned = rawTime.replace(/[^\d:.]/g, "").replace(".", ":");
   const [hoursRaw, minutesRaw = "00"] = cleaned.split(":");
@@ -131,29 +116,6 @@ function addMinutes(time24: string, delta: number): string {
   const minutes = adjusted % 60;
 
   return `${String(hours).padStart(2, "0")}:${String(minutes).padStart(2, "0")}`;
-}
-
-function stripTags(raw: string): string {
-  return raw
-    .replace(/<[^>]+>/g, "")
-    .replace(/&nbsp;/g, " ")
-    .trim();
-}
-
-function extractParagraphs(html: string, containerId: string): string[] {
-  const pattern = new RegExp(
-    `<div id="${containerId}">([\\s\\S]*?)<\\/div>`,
-    "i",
-  );
-  const match = html.match(pattern);
-
-  if (!match) {
-    return [];
-  }
-
-  return [...match[1].matchAll(/<p[^>]*>([\s\S]*?)<\/p>/gi)]
-    .map((item) => stripTags(item[1]))
-    .filter(Boolean);
 }
 
 function getNowMinutesInTimezone(timezone: string, now: Date): number {
@@ -360,27 +322,6 @@ function nearestLocation(
   return winner;
 }
 
-function buildIccukFeedRequest(
-  location: PrayerLocation,
-  now = new Date(),
-): { url: string; dateKey: string } {
-  const dateKey = getDateKeyInTimezone(location.timezone, now);
-
-  if (!location.proxyUrlTemplate) {
-    return {
-      url: location.officialSourceUrl,
-      dateKey,
-    };
-  }
-
-  return {
-    url: location.proxyUrlTemplate
-      .replaceAll("{url}", encodeURIComponent(location.officialSourceUrl))
-      .replaceAll("{date}", dateKey),
-    dateKey,
-  };
-}
-
 export function pickRecommendedLocation(
   config: PrayerConfig,
   timezone: string,
@@ -406,59 +347,6 @@ export function pickRecommendedLocation(
       (location) => location.id === config.fallbackLocationId,
     ) ?? config.locations[0]
   );
-}
-
-async function loadIccukTimes(
-  location: PrayerLocation,
-  ttlMs: number,
-): Promise<PrayerTimesSnapshot> {
-  const request = buildIccukFeedRequest(location);
-
-  const html = await fetchTextWithCache(request.url, {
-    ttlMs,
-    cacheKey: `prayer:iccuk:${location.id}:${request.dateKey}`,
-    allowStaleOnError: true,
-    headers: {
-      Accept: "text/html,application/xhtml+xml",
-    },
-  });
-  const names = extractParagraphs(html, "adWrapPrayTimesCol1");
-  const rawTimes = extractParagraphs(html, "adWrapPrayTimesCol2");
-
-  const mapped = names
-    .map((name, index) => {
-      const normalisedName = normalisePrayerName(name);
-      const rawTime = rawTimes[index];
-
-      if (!normalisedName || !rawTime) {
-        return null;
-      }
-
-      return {
-        name: normalisedName,
-        time24: toTime24(rawTime),
-      };
-    })
-    .filter((entry): entry is PrayerSlot => Boolean(entry));
-
-  if (mapped.length < prayerNames.length - 1) {
-    throw new Error(
-      "Official mosque feed returned an unexpected prayer format",
-    );
-  }
-
-  const dateMatch = html.match(
-    /<p class="prayerSubTitle"><font[^>]*>([^<]+)<\/font><\/p>/i,
-  );
-
-  return {
-    location,
-    dateLabel: dateMatch?.[1]?.trim() ?? "Today",
-    sourceLabel: location.officialSourceLabel,
-    sourceUrl: location.officialSourceUrl,
-    prayers: mapped,
-    fetchedAt: new Date().toISOString(),
-  };
 }
 
 function pickLondonDayByLocalDate(
@@ -668,16 +556,12 @@ export async function loadPrayerTimesForLocation(
   location: PrayerLocation,
   options?: PrayerLoadOptions,
 ): Promise<PrayerTimesSnapshot> {
-  const iccukMs = options?.cacheTtlMs?.iccukMs ?? DEFAULT_CACHE_TTL_MS;
-
-  if (location.provider === "iccuk_html") {
-    return loadIccukTimes(location, iccukMs);
-  }
+  const feedMs = options?.cacheTtlMs?.feedMs ?? DEFAULT_CACHE_TTL_MS;
 
   if (location.provider === "london_unified_7d") {
     return loadLondonUnified7dTimes(
       location,
-      iccukMs,
+      feedMs,
       options?.adhanMadhabOverride,
     );
   }

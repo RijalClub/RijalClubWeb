@@ -204,10 +204,9 @@ const prayerLocationSchema = z.object({
   timezone: z.string().min(1),
   latitude: z.number(),
   longitude: z.number(),
-  provider: z.enum(["iccuk_html", "london_unified_7d", "adhan"]),
+  provider: z.enum(["london_unified_7d", "adhan"]),
   officialSourceLabel: z.string().min(1),
   officialSourceUrl: z.string().url(),
-  proxyUrlTemplate: z.string().optional(),
   adhanMethod: z
     .enum([
       "MuslimWorldLeague",

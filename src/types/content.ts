@@ -150,7 +150,7 @@ export interface AnnouncementsConfig {
   items?: AnnouncementItem[]
 }
 
-export type PrayerProvider = 'iccuk_html' | 'london_unified_7d' | 'adhan'
+export type PrayerProvider = 'london_unified_7d' | 'adhan'
 
 export type AdhanMethod =
   | 'MuslimWorldLeague'
@@ -182,7 +182,6 @@ export interface PrayerLocation {
   provider: PrayerProvider
   officialSourceLabel: string
   officialSourceUrl: string
-  proxyUrlTemplate?: string
   adhanMethod?: AdhanMethod
   adhanMadhab?: AdhanMadhab
   adhanHighLatitudeRule?: AdhanHighLatitudeRule
