@@ -25,7 +25,7 @@ export function HeroSection({ profile }: HeroSectionProps) {
         
         <p className="hero-description">{profile.description}</p>
 
-        <div className="mt-8 flex flex-wrap gap-2">
+        <div className="mt-4 flex flex-wrap gap-2">
           {profile.values.map((value) => (
             <Badge 
               key={value} 
@@ -37,7 +37,7 @@ export function HeroSection({ profile }: HeroSectionProps) {
           ))}
         </div>
 
-        <div className="mt-10 flex flex-wrap gap-4">
+        <div className="mt-6 flex flex-wrap gap-4">
           <Button asChild size="lg" className="rounded-full bg-primary text-primary-foreground hover:bg-primary/90 shadow-lg shadow-primary/20 transition-all hover:-translate-y-0.5 font-bold">
             <a href={profile.primaryCta.url} target="_blank" rel="noopener noreferrer">
               {profile.primaryCta.label}
@@ -54,7 +54,7 @@ export function HeroSection({ profile }: HeroSectionProps) {
           </Button>
         </div>
 
-        <div className="mt-12 grid grid-cols-2 md:grid-cols-3 gap-6 pt-10 border-t border-white/5">
+        <div className="mt-8 grid grid-cols-2 md:grid-cols-3 gap-6 pt-6 border-t border-white/5">
           {profile.stats.map((stat) => (
             <div key={stat.label} className="flex flex-col gap-1">
               <span className="font-bebas text-3xl text-white tracking-wide">{stat.value}</span>

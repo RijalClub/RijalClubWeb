@@ -255,25 +255,30 @@ export interface QuranConfig {
   maxSelectableTranslations: number
 }
 
-export interface HadithCollectionConfig {
+export interface LibraryItemConfig {
   id: string
   title: string
   subtitle: string
   description: string
-  sourceSlug: string
-  totalHadith: number
   coverImage?: string
-  referenceUrl: string
   pdfUrl?: string
+  sourceUrl?: string
+  entryCount?: number
 }
 
-export interface HadithConfig {
+export interface LibraryCategoryConfig {
+  id: string
+  title: string
+  description?: string
+  items: LibraryItemConfig[]
+}
+
+export interface LibraryConfig {
   title: string
   description: string
-  apiBaseUrl: string
-  defaultCollectionId: string
-  defaultHadithId: number
-  collections: HadithCollectionConfig[]
+  defaultCategoryId: string
+  defaultItemId: string
+  categories: LibraryCategoryConfig[]
 }
 
 export interface ContactConfig {
@@ -289,7 +294,7 @@ export interface QuranCacheConfig {
   chapterAudioHours: number
 }
 
-export interface HadithCacheConfig {
+export interface LibraryCacheConfig {
   entryDays: number
 }
 
@@ -300,6 +305,6 @@ export interface PrayerCacheConfig {
 
 export interface CacheConfig {
   quran: QuranCacheConfig
-  hadith: HadithCacheConfig
+  library: LibraryCacheConfig
   prayer: PrayerCacheConfig
 }

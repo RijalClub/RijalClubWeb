@@ -156,7 +156,7 @@ body::before {
 }
 
 .hero-copy {
-  @apply p-8 md:p-12 lg:p-16 flex flex-col justify-center;
+  @apply p-6 md:p-8 lg:p-10 flex flex-col justify-center;
 }
 
 .hero h1 {
@@ -202,6 +202,11 @@ body::before {
   @apply bg-primary/30 text-white;
 }
 
+/* Kicker label (icon + small uppercase text above headings) */
+.kicker {
+  @apply flex items-center gap-2 text-[11px] font-bold uppercase tracking-[0.18em] text-muted-foreground;
+}
+
 /* Standardizing common UI patterns */
 .section-heading {
   @apply flex flex-col gap-2 mb-6;
@@ -224,4 +229,49 @@ body::before {
 
 .reveal {
   @apply animate-in fade-in slide-in-from-bottom-4 duration-700;
+}
+
+/* Adhan Mini Player — fixed bottom-right floating card */
+.adhan-mini-player {
+  @apply fixed bottom-4 right-4 z-[100] flex flex-col gap-3 p-4 rounded-(--radius-lg) border border-white/10 bg-white/5 backdrop-blur-2xl;
+  width: min(380px, calc(100vw - 2rem));
+  box-shadow: var(--shadow-premium);
+  animation: adhan-slide-up 0.3s ease-out;
+}
+
+.adhan-mini-player:hover {
+  @apply border-white/15 bg-white/[0.07];
+}
+
+.adhan-mini-header {
+  @apply flex items-center justify-between gap-3;
+}
+
+.adhan-mini-top-actions {
+  @apply flex items-center gap-2;
+}
+
+.adhan-mini-actions {
+  @apply flex items-center gap-2 pt-2 border-t border-white/5;
+}
+
+.tick-option.switch-row {
+  @apply flex items-center gap-2 text-xs text-muted-foreground cursor-pointer;
+}
+
+.source-note {
+  @apply text-[10px] text-muted-foreground leading-relaxed;
+}
+
+.adhan-mini-status {
+  @apply pt-1;
+}
+
+.icon-btn {
+  @apply text-xs;
+}
+
+@keyframes adhan-slide-up {
+  from { opacity: 0; transform: translateY(1rem); }
+  to { opacity: 1; transform: translateY(0); }
 }

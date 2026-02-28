@@ -18,6 +18,14 @@
   gap: 0.7rem;
 }
 
+.fitness-hero {
+  padding: 1.75rem 2rem;
+}
+
+.fitness-jump {
+  padding: 1.25rem 1.75rem;
+}
+
 .fitness-hero p {
   margin: 0.6rem 0 0;
   color: var(--muted);

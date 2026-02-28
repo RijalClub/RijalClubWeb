@@ -6,7 +6,7 @@ import type {
   StoreConfig,
   StoreProduct,
 } from "@/types/content";
-import { Images, ShoppingBag, X, ExternalLink, Play, ShoppingCart, Info, RefreshCw } from "lucide-react";
+import { Images, ShoppingBag, X, Play, ShoppingCart, Info, RefreshCw } from "lucide-react";
 import { useEffect, useState } from "react";
 import { cn } from "@/lib/utils";
 

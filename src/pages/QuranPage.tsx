@@ -34,7 +34,6 @@ import {
   ChevronLeft,
   ChevronRight,
   Languages,
-  PlayCircle,
   RefreshCw,
   RotateCcw,
   ScanText,
@@ -93,8 +92,8 @@ export function QuranPage({ config, cache }: QuranPageProps) {
   const [chapters, setChapters] = useState<QuranChapter[]>([]);
   const [translations, setTranslations] = useState<QuranTranslationResource[]>([]);
   const [reciters, setReciters] = useState<QuranReciter[]>([]);
-  const [bootstrapLoading, setBootstrapLoading] = useState(true);
-  const [bootstrapError, setBootstrapError] = useState<string | null>(null);
+  const [_bootstrapLoading, setBootstrapLoading] = useState(true);
+  const [_bootstrapError, setBootstrapError] = useState<string | null>(null);
 
   const [chapterId, setChapterId] = useState(() => loadStoredValue("rijal:quran:chapter", config.defaultChapterId, v => Number.parseInt(v, 10)));
   const [reciterId, setReciterId] = useState(() => loadStoredValue("rijal:quran:reciter", config.defaultReciterId, v => Number.parseInt(v, 10)));
@@ -109,7 +108,7 @@ export function QuranPage({ config, cache }: QuranPageProps) {
   const [languageFilter, setLanguageFilter] = useState("all");
   const [verses, setVerses] = useState<QuranVerse[]>([]);
   const [versesLoading, setVersesLoading] = useState(false);
-  const [versesError, setVersesError] = useState<string | null>(null);
+  const [_versesError, setVersesError] = useState<string | null>(null);
   const [audioUrl, setAudioUrl] = useState<string | null>(null);
 
   const [isReaderModeOpen, setIsReaderModeOpen] = useState(false);
@@ -117,7 +116,7 @@ export function QuranPage({ config, cache }: QuranPageProps) {
   const [readerDirection, setReaderDirection] = useState<"next" | "prev" | null>(null);
   const [readerVerses, setReaderVerses] = useState<QuranPageVerse[]>([]);
   const [readerLoading, setReaderLoading] = useState(false);
-  const [readerError, setReaderError] = useState<string | null>(null);
+  const [_readerError, setReaderError] = useState<string | null>(null);
 
   useEffect(() => {
     let isMounted = true;
@@ -192,6 +191,15 @@ export function QuranPage({ config, cache }: QuranPageProps) {
     return () => { isMounted = false; };
   }, [cache.pageVersesDays, config.apiBaseUrl, isReaderModeOpen, maxPage, readerPage]);
 
+  useEffect(() => {
+    if (isReaderModeOpen) {
+      document.body.style.overflow = 'hidden';
+    } else {
+      document.body.style.overflow = '';
+    }
+    return () => { document.body.style.overflow = ''; };
+  }, [isReaderModeOpen]);
+
   const toggleTranslation = (id: number) => {
     const exists = selectedTranslationIds.includes(id);
     if (exists) {
@@ -236,7 +244,7 @@ export function QuranPage({ config, cache }: QuranPageProps) {
         )}
       </section>
 
-      <section className="panel p-6 flex flex-col gap-8 reveal">
+      <section className="panel p-6 flex flex-col gap-6 reveal">
         <div className="flex items-center justify-between border-b border-white/5 pb-4">
           <div className="flex items-center gap-2 text-[10px] uppercase tracking-widest text-muted-foreground font-bold">
             <Settings2 size={14} className="text-primary" />
@@ -252,11 +260,11 @@ export function QuranPage({ config, cache }: QuranPageProps) {
           </Button>
         </div>
 
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-          <div className="flex flex-col gap-2">
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-[1fr_1.4fr_1fr_0.8fr] gap-3">
+          <div className="flex flex-col gap-2 min-w-0">
             <label className="text-[10px] uppercase tracking-widest text-muted-foreground font-bold ml-1">Surah</label>
             <Select value={String(chapterId)} onValueChange={v => setChapterId(Number.parseInt(v, 10))}>
-              <SelectTrigger className="rounded-xl border-white/10 bg-white/5 text-xs text-white h-11">
+              <SelectTrigger className="w-full min-w-0 rounded-xl border-white/10 bg-white/5 text-xs text-white h-11">
                 <SelectValue placeholder="Select Surah" />
               </SelectTrigger>
               <SelectContent className="bg-background/95 backdrop-blur-xl border-white/10 text-white max-h-[300px]">
@@ -265,10 +273,10 @@ export function QuranPage({ config, cache }: QuranPageProps) {
             </Select>
           </div>
 
-          <div className="flex flex-col gap-2">
+          <div className="flex flex-col gap-2 min-w-0">
             <label className="text-[10px] uppercase tracking-widest text-muted-foreground font-bold ml-1">Audio Reciter</label>
             <Select value={String(reciterId)} onValueChange={v => setReciterId(Number.parseInt(v, 10))}>
-              <SelectTrigger className="rounded-xl border-white/10 bg-white/5 text-xs text-white h-11">
+              <SelectTrigger className="w-full min-w-0 rounded-xl border-white/10 bg-white/5 text-xs text-white h-11">
                 <SelectValue placeholder="Select Reciter" />
               </SelectTrigger>
               <SelectContent className="bg-background/95 backdrop-blur-xl border-white/10 text-white max-h-[300px]">
@@ -277,10 +285,10 @@ export function QuranPage({ config, cache }: QuranPageProps) {
             </Select>
           </div>
 
-          <div className="flex flex-col gap-2">
+          <div className="flex flex-col gap-2 min-w-0">
             <label className="text-[10px] uppercase tracking-widest text-muted-foreground font-bold ml-1">Arabic Script</label>
             <Select value={script} onValueChange={v => setScript(v as QuranScript)}>
-              <SelectTrigger className="rounded-xl border-white/10 bg-white/5 text-xs text-white h-11">
+              <SelectTrigger className="w-full min-w-0 rounded-xl border-white/10 bg-white/5 text-xs text-white h-11">
                 <SelectValue placeholder="Select Script" />
               </SelectTrigger>
               <SelectContent className="bg-background/95 backdrop-blur-xl border-white/10 text-white">
@@ -289,15 +297,15 @@ export function QuranPage({ config, cache }: QuranPageProps) {
             </Select>
           </div>
 
-          <div className="flex flex-col gap-2">
+          <div className="flex flex-col gap-2 min-w-0">
             <div className="flex justify-between items-center ml-1">
               <label className="text-[10px] uppercase tracking-widest text-muted-foreground font-bold">Text Size</label>
               <span className="text-[10px] font-bold text-primary">{fontScale.toFixed(2)}x</span>
             </div>
             <div className="h-11 flex items-center px-2 bg-white/5 rounded-xl border border-white/10">
-              <Slider 
-                min={1.1} max={2.3} step={0.05} 
-                value={[fontScale]} 
+              <Slider
+                min={1.1} max={2.3} step={0.05}
+                value={[fontScale]}
                 onValueChange={([v]) => setFontScale(v)}
                 className="w-full"
               />
@@ -460,7 +468,7 @@ export function QuranPage({ config, cache }: QuranPageProps) {
 
       {isReaderModeOpen && (
         <div className="fixed inset-0 z-[150] flex items-center justify-center p-4 md:p-10 animate-in fade-in duration-300">
-          <div className="absolute inset-0 bg-background/95 backdrop-blur-2xl" onClick={() => setIsReaderModeOpen(false)} />
+          <div className="absolute inset-0 bg-background" onClick={() => setIsReaderModeOpen(false)} />
           <div className={cn("relative w-full max-w-6xl max-h-full flex flex-col panel border-primary/20 shadow-4xl", lightMode && "bg-white text-slate-900")}>
             <header className="p-6 md:p-8 flex items-center justify-between border-b border-black/10">
               <div className="flex items-center gap-4">
@@ -521,24 +529,24 @@ export function QuranPage({ config, cache }: QuranPageProps) {
               {readerLoading ? (
                 <div className="size-full flex items-center justify-center animate-pulse"><RefreshCw className="animate-spin size-12 text-primary" /></div>
               ) : (
-                <div className={cn("max-w-4xl mx-auto flex flex-wrap justify-center gap-y-12 gap-x-6 text-right transition-all duration-500", readerDirection === "next" ? "animate-in slide-in-from-right-10 fade-in" : "animate-in slide-in-from-left-10 fade-in")} dir="rtl">
+                <div className={cn("max-w-4xl mx-auto text-right leading-[3] transition-all duration-500", readerDirection === "next" ? "animate-in slide-in-from-right-10 fade-in" : "animate-in slide-in-from-left-10 fade-in")} dir="rtl">
                   {readerVerses.map(v => (
-                    <span key={v.id} className="inline-flex flex-wrap items-center justify-center gap-4">
+                    <span key={v.id}>
                       {script === "text_uthmani_tajweed" ? (
-                        <span 
-                          className={cn("quran-arabic leading-[3]", arabicScriptClass(script))}
-                          style={{ fontSize: `${fontScale * 1.8}rem` }}
+                        <span
+                          className={cn("quran-arabic", arabicScriptClass(script))}
+                          style={{ fontSize: `${fontScale * 1.8}rem`, lineHeight: 3 }}
                           dangerouslySetInnerHTML={{ __html: verseTextByScript(v, script) }}
                         />
                       ) : (
-                        <span 
-                          className={cn("quran-arabic leading-[3]", arabicScriptClass(script))}
-                          style={{ fontSize: `${fontScale * 1.8}rem` }}
+                        <span
+                          className={cn("quran-arabic", arabicScriptClass(script))}
+                          style={{ fontSize: `${fontScale * 1.8}rem`, lineHeight: 3 }}
                         >
                           {verseTextByScript(v, script)}
                         </span>
                       )}
-                      <span className="reader-ayah-no text-lg">{formatArabicAyahNumber(v.verseNumber)}</span>
+                      <span className="reader-ayah-no mx-1">{formatArabicAyahNumber(v.verseNumber)}</span>
                     </span>
                   ))}
                 </div>

@@ -7,6 +7,7 @@ export interface QuranChapter {
   nameArabic: string
   versesCount: number
   translatedName: string
+  revelationPlace: string
   pages: [number, number]
 }
 
@@ -67,6 +68,7 @@ interface ChaptersResponse {
     name_simple: string
     name_arabic: string
     verses_count: number
+    revelation_place: string
     pages: number[]
     translated_name: {
       name: string
@@ -256,6 +258,7 @@ export async function loadQuranBootstrap(apiBaseUrl: string, options?: { ttlMs?:
       nameArabic: chapter.name_arabic,
       versesCount: chapter.verses_count,
       translatedName: chapter.translated_name.name,
+      revelationPlace: chapter.revelation_place,
       pages: [pageStart, pageEnd] as [number, number],
     }
   })

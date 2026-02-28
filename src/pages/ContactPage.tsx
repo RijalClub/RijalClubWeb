@@ -6,7 +6,6 @@ import type { ContactConfig } from "@/types/content";
 import emailjs from "@emailjs/browser";
 import { LoaderCircle, Mail, Send, MessageSquare, Info } from "lucide-react";
 import { type FormEvent, useMemo, useState } from "react";
-import { cn } from "@/lib/utils";
 
 interface ContactPageProps {
   config: ContactConfig;
@@ -67,7 +66,7 @@ export function ContactPage({ config }: ContactPageProps) {
 
     setIsSubmitting(true);
     try {
-      await emailjs.send(serviceID, templateID, { name, email, subject, message, user_name: name, user_email: email, submitted_at: new Date().toISOString() }, { publicKey });
+      await emailjs.send(serviceID!, templateID!, { name, email, subject, message, user_name: name, user_email: email, submitted_at: new Date().toISOString() }, { publicKey: publicKey! });
       setSuccessMessage("Message sent successfully. We will get back to you soon, in sha Allah.");
       setValues(initialFormValues);
     } catch (error) {

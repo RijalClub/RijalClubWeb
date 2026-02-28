@@ -3,7 +3,7 @@ import type {
   BlogConfig,
   CacheConfig,
   ContactConfig,
-  HadithConfig,
+  LibraryConfig,
   LinksConfig,
   PrayerConfig,
   ProfileConfig,
@@ -323,24 +323,29 @@ const quranSchema = z.object({
   maxSelectableTranslations: z.number().int().min(1).max(8),
 });
 
-const hadithSchema = z.object({
+const libraryItemSchema = z.object({
+  id: z.string().min(1),
+  title: z.string().min(1),
+  subtitle: z.string().min(1),
+  description: z.string().min(1),
+  coverImage: urlOrAbsolutePathSchema.optional(),
+  pdfUrl: urlOrAbsolutePathSchema.optional(),
+  sourceUrl: z.string().url().optional(),
+  entryCount: z.number().int().positive().optional(),
+});
+
+const librarySchema = z.object({
   title: z.string().min(1),
   description: z.string().min(1),
-  apiBaseUrl: z.string().url(),
-  defaultCollectionId: z.string().min(1),
-  defaultHadithId: z.number().int().positive(),
-  collections: z
+  defaultCategoryId: z.string().min(1),
+  defaultItemId: z.string().min(1),
+  categories: z
     .array(
       z.object({
         id: z.string().min(1),
         title: z.string().min(1),
-        subtitle: z.string().min(1),
-        description: z.string().min(1),
-        sourceSlug: z.string().min(1),
-        totalHadith: z.number().int().positive(),
-        coverImage: urlOrAbsolutePathSchema.optional(),
-        referenceUrl: z.string().url(),
-        pdfUrl: urlOrAbsolutePathSchema.optional(),
+        description: z.string().min(1).optional(),
+        items: z.array(libraryItemSchema).min(1),
       }),
     )
     .min(1),
@@ -352,21 +357,31 @@ const contactSchema = z.object({
   statusText: z.string().min(1),
 });
 
-const cacheSchema = z.object({
-  quran: z.object({
-    bootstrapHours: z.number().positive(),
-    chapterVersesDays: z.number().positive(),
-    pageVersesDays: z.number().positive(),
-    chapterAudioHours: z.number().positive(),
+const cacheSchema = z.preprocess(
+  (raw) => {
+    // Backward compat: accept legacy "hadith" key as "library"
+    if (raw && typeof raw === "object" && !("library" in raw) && "hadith" in raw) {
+      const { hadith, ...rest } = raw as Record<string, unknown>;
+      return { ...rest, library: hadith };
+    }
+    return raw;
+  },
+  z.object({
+    quran: z.object({
+      bootstrapHours: z.number().positive(),
+      chapterVersesDays: z.number().positive(),
+      pageVersesDays: z.number().positive(),
+      chapterAudioHours: z.number().positive(),
+    }),
+    library: z.object({
+      entryDays: z.number().positive(),
+    }),
+    prayer: z.object({
+      londonFeedMinutes: z.number().positive(),
+      aladhanMinutes: z.number().positive(),
+    }),
   }),
-  hadith: z.object({
-    entryDays: z.number().positive(),
-  }),
-  prayer: z.object({
-    londonFeedMinutes: z.number().positive(),
-    aladhanMinutes: z.number().positive(),
-  }),
-});
+);
 
 const configCache = new Map<string, Promise<unknown>>();
 
@@ -425,7 +440,7 @@ export interface SiteContent {
   prayer: PrayerConfig;
   store: StoreConfig;
   quran: QuranConfig;
-  hadith: HadithConfig;
+  library: LibraryConfig;
   contact: ContactConfig;
   cache: CacheConfig;
 }
@@ -439,7 +454,7 @@ export async function loadSiteContent(): Promise<SiteContent> {
     prayer,
     store,
     quran,
-    hadith,
+    library,
     contact,
     cache,
   ] = await Promise.all([
@@ -450,7 +465,7 @@ export async function loadSiteContent(): Promise<SiteContent> {
     fetchConfig("prayer.json", prayerSchema),
     fetchConfig("store.json", storeSchema),
     fetchConfig("quran.json", quranSchema),
-    fetchConfig("hadith.json", hadithSchema),
+    fetchConfig("library.json", librarySchema),
     fetchConfig("contact.json", contactSchema),
     fetchConfig("cache.json", cacheSchema),
   ]);
@@ -463,7 +478,7 @@ export async function loadSiteContent(): Promise<SiteContent> {
     prayer,
     store,
     quran,
-    hadith,
+    library,
     contact,
     cache,
   };

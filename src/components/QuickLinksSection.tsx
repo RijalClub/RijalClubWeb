@@ -1,5 +1,4 @@
 import { useAdhanAlert } from "@/components/AdhanAlertProvider";
-import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Switch } from "@/components/ui/switch";
 import {
@@ -22,7 +21,6 @@ import {
   PlayCircle,
   Radio,
   Youtube,
-  Globe,
   ArrowRight
 } from "lucide-react";
 import { useMemo } from "react";

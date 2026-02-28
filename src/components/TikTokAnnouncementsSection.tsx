@@ -75,15 +75,15 @@ function proxyUrlFromTemplate(template: string | undefined, sourceUrl: string): 
 function parsePlaylistItems(html: string): TikTokPlaylistItem[] {
   const stateMatch = html.match(/<script[^>]*id="__FRONTITY_CONNECT_STATE__"[^>]*>([\s\S]*?)<\/script>/i);
   if (!stateMatch?.[1]) return [];
-  let parsed: any;
-  try { parsed = JSON.parse(stateMatch[1]); } catch { return []; }
-  const data = parsed?.source?.data;
+  let parsed: Record<string, unknown>;
+  try { parsed = JSON.parse(stateMatch[1]) as Record<string, unknown>; } catch { return []; }
+  const data = (parsed?.source as Record<string, unknown>)?.data as Record<string, Record<string, unknown>> | undefined;
   if (!data) return [];
   const embedEntryKey = Object.keys(data).find(key => key.startsWith("/embed/@"));
   const candidateEntries = embedEntryKey ? [data[embedEntryKey], ...Object.values(data)] : Object.values(data);
-  const rawItems = candidateEntries.map((entry: any) => entry?.videoList || entry?.playlist?.list).find(entry => Array.isArray(entry));
-  return rawItems ? rawItems.filter((i: any) => typeof i.id === "string" || typeof i.id === "number").map((i: any) => ({
-    id: String(i.id), desc: i.desc, authorUniqueId: i.authorUniqueId, coverUrl: i.coverUrl, dynamicCoverUrl: i.dynamicCoverUrl, originCoverUrl: i.originCoverUrl,
+  const rawItems = candidateEntries.map((entry) => (entry as Record<string, unknown>)?.videoList || (entry as Record<string, unknown>)?.playlist && ((entry as Record<string, unknown>).playlist as Record<string, unknown>)?.list).find(entry => Array.isArray(entry));
+  return rawItems ? (rawItems as Record<string, unknown>[]).filter((i) => typeof i.id === "string" || typeof i.id === "number").map((i) => ({
+    id: String(i.id), desc: i.desc as string, authorUniqueId: i.authorUniqueId as string, coverUrl: i.coverUrl as string, dynamicCoverUrl: i.dynamicCoverUrl as string, originCoverUrl: i.originCoverUrl as string,
   })) : [];
 }
 

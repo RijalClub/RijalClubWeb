@@ -102,6 +102,14 @@ export default function App() {
           setContent(result);
           setErrorMessage(null);
         }
+
+        // Prefetch heavy lazy routes during idle time to reduce navigation delay
+        if ("requestIdleCallback" in window) {
+          window.requestIdleCallback(() => {
+            void import("@/pages/QuranPage");
+            void import("@/pages/LibraryPage");
+          });
+        }
       })
       .catch((error: unknown) => {
         if (isMounted) {
@@ -153,7 +161,7 @@ export default function App() {
               />
               <Route
                 path="/library"
-                element={<LibraryPage config={content.hadith} />}
+                element={<LibraryPage config={content.library} />}
               />
               <Route
                 path="/store"
