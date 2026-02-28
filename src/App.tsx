@@ -98,7 +98,11 @@ export default function App() {
         prayerConfig={content.prayer}
         prayerCache={content.cache.prayer}
       >
-        <SiteShell profile={content.profile} showStore={content.store.isOpen}>
+        <SiteShell
+          profile={content.profile}
+          showStore={content.store.isOpen}
+          showLibrary={Boolean(content.hadith)}
+        >
           <Suspense fallback={null}>
             <Routes>
               <Route path="/" element={<HomePage content={content} />} />
@@ -118,7 +122,13 @@ export default function App() {
               />
               <Route
                 path="/library"
-                element={<LibraryPage config={content.hadith} />}
+                element={
+                  content.hadith ? (
+                    <LibraryPage config={content.hadith} />
+                  ) : (
+                    <Navigate to="/" replace />
+                  )
+                }
               />
               <Route
                 path="/store"

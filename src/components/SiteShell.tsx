@@ -6,10 +6,16 @@ import { Link, NavLink, useLocation } from "react-router-dom";
 interface SiteShellProps {
   profile: ProfileConfig;
   showStore: boolean;
+  showLibrary: boolean;
   children: ReactNode;
 }
 
-export function SiteShell({ profile, showStore, children }: SiteShellProps) {
+export function SiteShell({
+  profile,
+  showStore,
+  showLibrary,
+  children,
+}: SiteShellProps) {
   const currentYear = new Date().getFullYear();
   const routeLocation = useLocation();
   const [menuOpen, setMenuOpen] = useState(false);
@@ -18,11 +24,11 @@ export function SiteShell({ profile, showStore, children }: SiteShellProps) {
       { to: "/", label: "Home", end: true },
       { to: "/blog", label: "Blog" },
       { to: "/quran", label: "Quran" },
-      { to: "/library", label: "Library" },
+      ...(showLibrary ? [{ to: "/library", label: "Library" }] : []),
       ...(showStore ? [{ to: "/store", label: "Store" }] : []),
       { to: "/contact", label: "Contact" },
     ],
-    [showStore],
+    [showLibrary, showStore],
   );
 
   useEffect(() => {

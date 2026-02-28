@@ -352,23 +352,47 @@ const contactSchema = z.object({
   statusText: z.string().min(1),
 });
 
-const cacheSchema = z.object({
-  quran: z.object({
-    bootstrapHours: z.number().positive(),
-    chapterVersesDays: z.number().positive(),
-    pageVersesDays: z.number().positive(),
-    chapterAudioHours: z.number().positive(),
+const cacheSchema = z.preprocess(
+  (raw) => {
+    // Accept either "library" or "hadith" key — normalize to "hadith" for this branch
+    if (raw && typeof raw === "object" && !("hadith" in raw) && "library" in raw) {
+      const { library, ...rest } = raw as Record<string, unknown>;
+      return { ...rest, hadith: library };
+    }
+    return raw;
+  },
+  z.object({
+    quran: z.object({
+      bootstrapHours: z.number().positive(),
+      chapterVersesDays: z.number().positive(),
+      pageVersesDays: z.number().positive(),
+      chapterAudioHours: z.number().positive(),
+    }),
+    hadith: z.object({
+      entryDays: z.number().positive(),
+    }),
+    prayer: z.object({
+      londonFeedMinutes: z.number().positive(),
+      aladhanMinutes: z.number().positive(),
+    }),
   }),
-  hadith: z.object({
-    entryDays: z.number().positive(),
-  }),
-  prayer: z.object({
-    londonFeedMinutes: z.number().positive(),
-    aladhanMinutes: z.number().positive(),
-  }),
-});
+);
 
 const configCache = new Map<string, Promise<unknown>>();
+
+class ConfigFetchError extends Error {
+  readonly fileName: string;
+  readonly status: number;
+  readonly statusText: string;
+
+  constructor(fileName: string, status: number, statusText: string) {
+    super(`Failed loading ${fileName}: ${status} ${statusText}`);
+    this.name = "ConfigFetchError";
+    this.fileName = fileName;
+    this.status = status;
+    this.statusText = statusText;
+  }
+}
 
 async function fetchConfig<T>(
   fileName: string,
@@ -387,8 +411,10 @@ async function fetchConfig<T>(
       })
         .then(async (response) => {
           if (!response.ok) {
-            throw new Error(
-              `Failed loading ${fileName}: ${response.status} ${response.statusText}`,
+            throw new ConfigFetchError(
+              fileName,
+              response.status,
+              response.statusText,
             );
           }
 
@@ -417,6 +443,21 @@ async function fetchConfig<T>(
   return (await configCache.get(fileUrl)) as T;
 }
 
+async function fetchOptionalConfig<T>(
+  fileName: string,
+  schema: z.ZodSchema<T>,
+): Promise<T | null> {
+  try {
+    return await fetchConfig(fileName, schema);
+  } catch (error) {
+    if (error instanceof ConfigFetchError && error.status === 404) {
+      return null;
+    }
+
+    throw error;
+  }
+}
+
 export interface SiteContent {
   profile: ProfileConfig;
   links: LinksConfig;
@@ -425,7 +466,7 @@ export interface SiteContent {
   prayer: PrayerConfig;
   store: StoreConfig;
   quran: QuranConfig;
-  hadith: HadithConfig;
+  hadith: HadithConfig | null;
   contact: ContactConfig;
   cache: CacheConfig;
 }
@@ -450,7 +491,7 @@ export async function loadSiteContent(): Promise<SiteContent> {
     fetchConfig("prayer.json", prayerSchema),
     fetchConfig("store.json", storeSchema),
     fetchConfig("quran.json", quranSchema),
-    fetchConfig("hadith.json", hadithSchema),
+    fetchOptionalConfig("hadith.json", hadithSchema),
     fetchConfig("contact.json", contactSchema),
     fetchConfig("cache.json", cacheSchema),
   ]);
